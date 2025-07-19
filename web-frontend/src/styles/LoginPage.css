@@ -1,0 +1,143 @@
+.login-background {
+  min-height: 100vh;
+  min-width: 100vw;
+  width: 100vw;
+  background: url('/montana.jpg') no-repeat center center #fff;
+  background-attachment: fixed;
+  background-size: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.login-page-container {
+  min-height: 100vh;
+  min-width: 100vw;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  position: relative;
+  z-index: 1;
+}
+
+.login-card {
+  background: rgba(226, 226, 226, 0.1);
+  backdrop-filter: blur(5px) saturate(180%);
+  -webkit-backdrop-filter: blur(5px) saturate(180%);
+  border-radius: 18px;
+  border: 1.5px solid rgba(180, 200, 255, 0.13);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.09);
+  padding: 40px 36px 32px 36px;
+  min-width: 340px;
+  max-width: 95vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 10;
+  position: relative;
+}
+
+.login-card.moveright {
+  transform: translate(420px, -60px);
+}
+
+.login-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 24px;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.18);
+}
+
+/* Colores para el mensaje de registro y botón */
+.login-extra-options {
+  color: #fff !important;
+  font-weight: 500;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.13);
+}
+.login-extra-options button {
+  color: #fff !important;
+  text-decoration: underline;
+  font-weight: 500;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1em;
+  padding: 0;
+  transition: color 0.2s;
+}
+.login-extra-options button:hover {
+  color: #b0c4de !important;
+}
+.login-error {
+  color: #d32f2f;
+  background: #fff0f0;
+  border: 1px solid #ffcdd2;
+  padding: 10px 18px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 1.05em;
+}
+
+.login-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 10px;
+}
+
+.login-label {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-size: 1.05em;
+  color: #fff;
+  font-weight: 500;
+  gap: 6px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.13);
+}
+
+.login-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid #b0c4de;
+  border-radius: 6px;
+  font-size: 1em;
+  margin-top: 2px;
+  background: #fff;
+  transition: border 0.2s;
+  flex: auto;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+.login-input:focus {
+  border: 1.5px solid #003366;
+  outline: none;
+  background: #fff;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 12px 0;
+  background: #003366;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1.1em;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.2s;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+.login-btn:hover {
+  background: #00509e;
+}

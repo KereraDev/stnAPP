@@ -1,0 +1,7 @@
+#Crear archivo .env si es que no esta en la raíz de api-backend
+
+#copiar y pegar lo siguiente
+
+MONGO_URI=mongodb+srv://robertoarayabd:lxuOH7RAhjL5fHbQ@app.npuvnwp.mongodb.net/app?retryWrites=true&w=majority&appName=app
+PORT=3000
+JWT_SECRET=93mcRBWJWX1Vvrx0ES3Y30p1PPPUxz
