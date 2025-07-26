@@ -1,0 +1,311 @@
+/* ========== CONTENEDOR GENERAL ========== */
+.admin-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem;
+  min-height: 100vh;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+.admin-container h2 {
+  color: #185dc8;
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 2.5rem;
+  font-weight: 300;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+.admin-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #185dc8;
+  margin-bottom: 4px;
+}
+.admin-subtitle {
+  color: #555;
+  font-size: 1.1rem;
+}
+.admin-header-icon {
+  background: #eaf3ff;
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+}
+
+/* ========== FORMULARIO DE USUARIO ========== */
+.user-form {
+  background: white;
+  padding: 2rem;
+  border-radius: 20px;
+  box-shadow: 0 40px 40px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  backdrop-filter: blur(10px);
+  border: 1px solid linear-gradient(135deg, #e2e8f0, #cbd5e0);
+  animation: fadeInUp 0.6s ease-out;
+}
+.user-form input,
+.user-form select {
+  padding: 1rem;
+  border: 2px solid #e1e8ed;
+  border-radius: 12px;
+  font-size: 1rem;
+  background: #f8fafc;
+  color: #2d3748;
+  transition: all 0.3s ease;
+}
+.user-form input:focus,
+.user-form select:focus {
+  outline: none;
+  border-color: #667eea;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  transform: translateY(-2px);
+}
+.user-form input::placeholder {
+  color: #a0aec0;
+  font-weight: 400;
+}
+.user-form label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  color: #4a5568;
+  cursor: pointer;
+}
+.user-form input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: #667eea;
+  cursor: pointer;
+}
+.user-form button {
+  grid-column: 1 / -1;
+  padding: 1rem 2rem;
+  background: #185dc8;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  transition: all 0.3s ease;
+}
+.user-form button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+}
+.user-form button:active {
+  transform: translateY(-1px);
+}
+
+/* ========== TABLA DE USUARIOS ========== */
+.user-table {
+  width: 100%;
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  border-collapse: collapse;
+  animation: fadeInUp 0.8s ease-out;
+  position: relative;
+}
+.user-table thead {
+  background: #185dc8;
+  color: white;
+}
+.user-table th,
+.user-table td {
+  padding: 1.5rem 1rem;
+  text-align: left;
+  font-size: 0.95rem;
+}
+.user-table td {
+  border-bottom: 1px solid #e2e8f0;
+  color: #4a5568;
+  font-weight: 500;
+}
+.user-table tbody tr {
+  transition: all 0.3s ease;
+}
+.user-table tbody tr:hover {
+  background: #f7fafc;
+  transform: scale(1.01);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+.user-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.user-table button {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  margin: 0 0.3rem;
+  padding: 0.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.user-table button:first-child {
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+}
+.user-table button:last-child {
+  background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+}
+.user-table button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* ========== ESTADOS DE USUARIOS ========== */
+.user-table td:nth-child(4) {
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.user-table tbody tr td:nth-child(4).activo {
+  color: #48bb78;
+}
+.user-table tbody tr td:nth-child(4).inactivo {
+  color: #f56565;
+}
+
+/* ========== MODAL ========== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+}
+.modal-content {
+  background: white;
+  padding: 2.5rem;
+  border-radius: 20px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+  animation: modalSlideIn 0.3s ease-out;
+}
+.modal-content h3 {
+  color: #2d3748;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+.modal-content p {
+  color: #4a5568;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+.modal-content code {
+  background: #edf2f7;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  font-family: "Courier New", monospace;
+  color: #667eea;
+  font-weight: 600;
+}
+.modal-content input {
+  width: 100%;
+  padding: 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+.modal-content input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+.modal-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+.modal-buttons button {
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.modal-buttons button:first-child {
+  background: #e2e8f0;
+  color: #4a5568;
+}
+.modal-buttons button:first-child:hover {
+  background: #cbd5e0;
+  transform: translateY(-2px);
+}
+.modal-buttons button:last-child {
+  background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+  color: white;
+}
+.modal-buttons button:last-child:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(245, 101, 101, 0.4);
+}
+.modal-buttons button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ========== ANIMACIONES ========== */
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+  .admin-container {
+    padding: 1rem;
+  }
+  .admin-container h2 {
+    font-size: 2rem;
+  }
+  .user-form {
+    grid-template-columns: 1fr;
+    padding: 1.5rem;
+  }
+  .user-table {
+    font-size: 0.9rem;
+  }
+  .user-table th,
+  .user-table td {
+    padding: 1rem 0.5rem;
+  }
+  .modal-content {
+    padding: 2rem;
+    margin: 1rem;
+  }
+}

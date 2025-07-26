@@ -1,99 +1,20 @@
-/* Fondo negro para el icono de ubicación */
-.icon-ubicacion { background-color: #000 !important; }
-/* Colores personalizados para cada icono de métrica */
-.icon-total { background-color: #2563eb; }
-.icon-hoy { background-color: #22c55e; }
-.icon-ultimo { background-color: #f59e42; }
-.icon-aislador { background-color: #e74c3c; }
-/* CONTENEDOR GENERAL */
+/* ========== CONTENEDOR GENERAL ========== */
 .dashboard-container {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 32px 16px;
+  padding: 2rem;
+  min-height: 100vh;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* FILA DE GRÁFICOS */
-.dashboard-graphics-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 24px;
-  margin-bottom: 40px;
-  justify-content: space-between;
-}
-
-/* TARJETAS DE GRÁFICO */
-.dashboard-graphic-card {
-  flex: 1 1 300px;
-  background: var(--surface-color);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  padding: 24px;
-  margin-bottom: 24px;
-  text-align: center;
-  min-width: 280px;
-}
-
-.dashboard-graphic-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: 16px;
-}
-
-/* CONTENIDO DE MÉTRICAS */
+/* ========== MÉTRICAS ========== */
 .dashboard-content {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 24px;
-  justify-content: space-between;
   margin-bottom: 40px;
 }
 
-/* MÉTRICAS - TARJETAS GENERALES */
-.dashboard-metric-card {
-  flex: 1 1 200px;
-  min-width: 200px;
-  background: var(--surface-color);
-  border-radius: var(--radius-lg);
-  border: 1px solid #dbeafe;
-  box-shadow: var(--shadow-md);
-  padding: 24px 16px;
-  text-align: center;
-  transition: box-shadow 0.2s, transform 0.2s;
-}
-
-.dashboard-metric-card:hover {
-  box-shadow: 0 4px 24px rgba(24, 93, 200, 0.18);
-  transform: scale(1.03);
-}
-
-/* CONTENEDOR DE ICONO Y VALOR */
-.dashboard-metric-icon-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-/* ÍCONOS */
-.dashboard-metric-icon {
-  width: 28px;
-  height: 28px;
-  color: var(--primary-color);
-  margin-bottom: 8px;
-}
-
-/* VALORES */
-.dashboard-metric-value {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #000;
-}
-
-/* ETIQUETA INFERIOR */
-.dashboard-metric-label {
-  font-size: 1rem;
-  color: var(--muted-foreground);
-}
 .dashboard-metric-card.horizontal {
   display: flex;
   align-items: center;
@@ -119,10 +40,11 @@
   align-items: center;
   justify-content: center;
 }
-.icon-total { background-color: #2563eb !important; }
-.icon-hoy { background-color: #22c55e !important; }
-.icon-ultimo { background-color: #f59e42 !important; }
-.icon-aislador { background-color: #e74c3c !important; }
+
+.icon-total    { background-color: #2563eb !important; }
+.icon-hoy      { background-color: #22c55e !important; }
+.icon-ultimo   { background-color: #f59e42 !important; }
+.icon-ubicacion { background-color: #000 !important; }
 
 .metric-icon {
   color: #fff;
@@ -145,4 +67,27 @@
 .metric-label {
   font-size: 0.95rem;
   color: #6b7280;
+}
+
+/* ========== GRÁFICOS ========== */
+.dashboard-graphics-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.dashboard-graphic-card {
+  background: var(--surface-color, #fff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: var(--shadow-md, 0 2px 6px rgba(0,0,0,0.05));
+  padding: 24px;
+  text-align: center;
+}
+
+.dashboard-graphic-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 16px;
 }

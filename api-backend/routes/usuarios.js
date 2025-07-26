@@ -67,10 +67,17 @@ router.patch('/:id', async (req, res) => {
       delete update.contraseña;
     }
 
+    // Convertir campo activo a estado si se envía
+    if (typeof update.activo === 'boolean') {
+      update.estado = update.activo ? 'activo' : 'inactivo';
+      delete update.activo; // evitar conflictos si no se usa ese campo en el schema
+    }
+
     const usuarioActualizado = await Usuario.findByIdAndUpdate(id, update, { new: true });
     if (!usuarioActualizado) {
       return res.status(404).json({ mensaje: 'Usuario no encontrado' });
     }
+
     res.json({ mensaje: 'Usuario actualizado correctamente', usuario: usuarioActualizado });
   } catch (error) {
     res.status(500).json({ mensaje: 'Error al actualizar usuario' });
