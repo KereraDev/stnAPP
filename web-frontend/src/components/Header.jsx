@@ -1,16 +1,23 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 import { User, ChevronDown, LogOut, Shield, Sparkles, BookText, LayoutDashboard } from 'lucide-react';
 import '../styles/Header.css';
 
 function Header() {
+  const navigate = useNavigate();
+
   let rol = '';
   let userName = '';
   const token = localStorage.getItem('token');
   if (token) {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      rol = payload.rol;
+      // opcional: si exp existe y está vencido, lo tratamos como no logueado
+      if (payload?.exp && Date.now() >= payload.exp * 1000) {
+        rol = '';
+      } else {
+        rol = payload.rol;
+      }
       userName = localStorage.getItem('userName') || 'Usuario';
     } catch {
       rol = '';
@@ -22,9 +29,13 @@ function Header() {
   const dropdownRef = useRef(null);
 
   const handleLogout = () => {
+    // limpiar todo lo relacionado a sesión/cachés
     localStorage.removeItem('token');
     localStorage.removeItem('userName');
-    window.location.href = '/';
+    localStorage.removeItem('informes_list');
+    localStorage.removeItem('dashboard_informes');
+    setIsDropdownOpen(false);
+    navigate('/', { replace: true });
   };
 
   useEffect(() => {
@@ -52,12 +63,12 @@ function Header() {
 
         <nav className="nav-desktop">
           <Link to="/dashboard" className="nav-link">
-          <LayoutDashboard />
-          <span>Dashboard</span>
+            <LayoutDashboard />
+            <span>Dashboard</span>
           </Link>
           <Link to="/informes" className="nav-link">
-          <BookText className="nav-icon"/>
-          <span>Informes</span>
+            <BookText className="nav-icon" />
+            <span>Informes</span>
           </Link>
           {rol === 'admin' && (
             <Link to="/admin" className="nav-link">
