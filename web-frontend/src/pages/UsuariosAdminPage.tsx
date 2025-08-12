@@ -3,7 +3,7 @@ import Header from '../components/Header';
 import BackgroundComponent from '../components/BackgroundComponent';
 import '../styles/UsuariosAdminPage.css';
 import { User } from 'lucide-react';
-
+import { Edit, Trash } from 'lucide-react';
 function UsuariosAdminPage() {
   const [usuarios, setUsuarios] = useState([]);
   const [formData, setFormData] = useState({
@@ -185,24 +185,19 @@ const handleEditar = (usuario) => {
         <h1 className="admin-title" style={{ margin: '32px 0 16px', textAlign: 'center' }}>
           Lista de Usuarios
         </h1>
-
-        {/* Input de búsqueda */}
+        <div className="user-table-wrapper">
+            {/* Input de búsqueda */}
         <input
           type="text"
           placeholder="Buscar por nombre, correo, rol..."
           value={filtro}
           onChange={(e) => setFiltro(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '12px',
-            fontSize: '1rem',
-            marginBottom: '24px',
-            borderRadius: '10px',
-            border: '1px solid #ccc'
-          }}
+          className="search-input"
         />
 
-        <table className="user-table">
+
+        </div>
+              <table className="user-table">
           <thead>
             <tr>
               <th>Nombre</th>
@@ -226,13 +221,18 @@ const handleEditar = (usuario) => {
                   <td>{u.rol}</td>
                   <td>{u.estado}</td>
                   <td>
-                    <button onClick={() => handleEditar(u)}>✏️</button>
-                    <button onClick={() => handleEliminarClick(u)}>🗑️</button>
+                    <button onClick={() => handleEditar(u)} className="icon-button">
+                      <Edit color="#fff" />
+                    </button>
+                    <button onClick={() => handleEliminarClick(u)} className="icon-button">
+                      <Trash color="#fff" />
+                    </button>
                   </td>
                 </tr>
               ))}
           </tbody>
         </table>
+        
 
         {/* Modal de confirmación */}
         {usuarioAEliminar && (

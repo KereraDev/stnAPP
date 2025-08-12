@@ -33,13 +33,6 @@ function AdminPage() {
       icon: FileText,
       colorClass: 'admin-section-green',
     },
-    {
-      id: 'logs',
-      title: 'Logs y Errores',
-      description: 'Monitorear registros del sistema y gestionar errores',
-      icon: AlertTriangle,
-      colorClass: 'admin-section-yellow',
-    }
   ];
 
   // Cargar usuarios e informes al montar el componente
@@ -59,7 +52,7 @@ function AdminPage() {
       .catch(() => setError('Error al cargar informes'));
   }, []);
 
-  // Crear usuario (si usas el formulario)
+  // Crear usuario
   const handleCrearUsuario = (e) => {
     e.preventDefault();
     fetch('http://localhost:3000/api/usuarios', {
@@ -88,7 +81,7 @@ function AdminPage() {
         {/* Encabezado del panel */}
         <div className="admin-header">
           <div className="admin-header-icon">
-            <Shield size={36} color="#185dc8" />
+            <Shield size={36}/>
           </div>
           <div>
             <h1 className="admin-title">Panel Administrativo</h1>
@@ -111,13 +104,14 @@ function AdminPage() {
                 onClick={() => handleSectionClick(section.id)}
               >
                 <div className="admin-section-icon">
-                  <IconComponent size={32} />
+                  <IconComponent size={32} backgroundColor="#fff" />
                 </div>
                 <div className="admin-section-content">
                   <h3>{section.title}</h3>
                   <p>{section.description}</p>
                   <button className="admin-section-btn">Acceder</button>
                 </div>
+                
               </div>
             );
           })}

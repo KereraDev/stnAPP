@@ -5,13 +5,16 @@ import '../styles/Header.css';
 
 function Header() {
   let rol = '';
+  let userName = '';
   const token = localStorage.getItem('token');
   if (token) {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
       rol = payload.rol;
+      userName = localStorage.getItem('userName') || 'Usuario';
     } catch {
       rol = '';
+      userName = 'Usuario';
     }
   }
 
@@ -19,7 +22,8 @@ function Header() {
   const dropdownRef = useRef(null);
 
   const handleLogout = () => {
-    localStorage.clear();
+    localStorage.removeItem('token');
+    localStorage.removeItem('userName');
     window.location.href = '/';
   };
 
@@ -69,7 +73,7 @@ function Header() {
               <User className="user-icon" />
             </div>
             <div className="user-info">
-              <p className="user-label">Usuario</p>
+              <p className="user-label">{userName}</p>
               <p className="user-role">{rol || 'No identificado'}</p>
             </div>
             <ChevronDown className={`chevron ${isDropdownOpen ? 'rotate' : ''}`} />

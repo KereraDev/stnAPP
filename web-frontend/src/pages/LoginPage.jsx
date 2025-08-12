@@ -13,6 +13,7 @@ function LoginPage() {
     try {
       const response = await login(credenciales);
       localStorage.setItem('token', response.token);
+      localStorage.setItem('userName', response.usuario.nombre);
       navigate('/dashboard');
     } catch (error) {
       setError('Error al iniciar sesión: ' + error.message);

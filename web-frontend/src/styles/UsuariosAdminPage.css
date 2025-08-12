@@ -25,7 +25,6 @@
   font-size: 1.1rem;
 }
 .admin-header-icon {
-  background: #eaf3ff;
   border-radius: 12px;
   padding: 10px;
   display: flex;
@@ -104,6 +103,30 @@
 .user-form button:active {
   transform: translateY(-1px);
 }
+/* ========== CONTENEDOR DE TABLA Y BUSCADOR ========== */
+.user-table-wrapper {
+}
+
+/* ========== BUSCADOR ========== */
+.search-input {
+  width: 100%;
+  padding: 1.2rem;
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  background: #f8fafc;
+  color: #2d3748;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.search-input:focus {
+  border-color: #667eea;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  outline: none;
+}
 
 /* ========== TABLA DE USUARIOS ========== */
 .user-table {
@@ -151,10 +174,16 @@
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
 }
+
 .user-table button:first-child {
   background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
 }
+
 .user-table button:last-child {
   background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
 }

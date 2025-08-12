@@ -12,7 +12,7 @@
 }
 
 .admin-header-icon {
-  background: #eaf3ff;
+  color: #185dc8; 
   border-radius: 12px;
   padding: 10px;
   display: flex;
@@ -59,11 +59,10 @@
 }
 
 .admin-section-blue { border-color: #b3d1ff; }
-.admin-section-green { border-color: #b3ffd1; }
-.admin-section-yellow { border-color: #ffe9b3; }
+.admin-section-green { border-color: #b3d1ff; }
 
 .admin-section-icon {
-  background: #f5faff;
+  color: #185dc8; 
   border-radius: 10px;
   padding: 12px;
   display: flex;
@@ -90,6 +89,7 @@
   font-size: 1rem;
   cursor: pointer;
   transition: background 0.2s;
+  align-self: center;
 }
 
 .admin-section-btn:hover {

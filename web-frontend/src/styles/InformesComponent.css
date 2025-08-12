@@ -1,420 +1,372 @@
 /* ================================
-   🎨 VARIABLES GLOBALES
+   🎨 Variables de tema
 ================================== */
 :root {
-  --primary-color: #185dc8;
-  --primary-hover: #003366;
-  --secondary-color: #64748b;
-  --success-color: #22c55e;
-  --danger-color: #dc2626;
-  --danger-hover: #b91c1c;
-  --warning-color: #d97706;
+  --primary: #185dc8;
+  --primary-700: #0f48a0;
+  --text-main: #0f265c;
+  --text-secondary: #526281;
+  --muted: #8fa2c2;
 
-  --background-color: #f5faff;
-  --surface-color: #fff;
-  --border-color: #b3d1ff;
+  --bg: #f6f9ff;
+  --surface: #ffffff;
+  --border: #d7e4ff;
 
-  --text-primary: #185dc8;
-  --text-secondary: #555;
-  --text-muted: #94a3b8;
-
-  --shadow-sm: 0 2px 8px rgba(4, 82, 199, 0.08);
-  --shadow-md: 0 2px 16px rgba(24,93,200,0.10);
-  --shadow-lg: 0 4px 24px rgba(24,93,200,0.18);
-  --shadow-xl: 0 8px 32px rgba(24,93,200,0.20);
+  --danger: #d12e2e;
+  --success: #2e7d32;
 
   --radius-sm: 8px;
-  --radius-md: 10px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  --shadow-sm: 0 2px 8px rgba(24, 93, 200, .08);
+  --shadow-md: 0 4px 16px rgba(24, 93, 200, .12);
+  --shadow-lg: 0 10px 28px rgba(24, 93, 200, .16);
 }
 
 /* ================================
-   🧱 ESTRUCTURA GENERAL
+   🧱 Layout general
 ================================== */
 .informes-containerComponent {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 24px;
   min-height: 100vh;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: var(--bg);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+  color: var(--text-main);
 }
 
 .informes-full-height {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
 /* ================================
-   🧭 CABECERA
+   🧭 Cabecera
 ================================== */
 .informes-container {
   display: flex;
   align-items: center;
-  gap: 18px;
-  margin-bottom: 32px;
+  gap: 14px;
 }
 
 .informes-header-icon {
-  background: #eaf3ff;
-  border-radius: var(--radius-md);
-  padding: 10px;
-  display: flex;
-  align-items: center;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #eaf1ff, #ffffff);
+  box-shadow: var(--shadow-sm);
 }
 
 .informes-title {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--primary-color);
-  margin-bottom: 4px;
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--primary);
+  margin: 0;
 }
 
 .informes-subtitle {
+  margin-top: 2px;
   color: var(--text-secondary);
-  font-size: 1.1rem;
+  font-weight: 500;
 }
 
 /* ================================
-   ⚠️ MENSAJE DE ERROR
+   ⚠️ Error / Vacío
 ================================== */
 .informes-error {
-  background: linear-gradient(135deg, #fef2f2, #fee2e2);
-  border: 2px solid #ffe9b3;
-  color: var(--danger-color);
-  padding: 1rem 1.5rem;
-  border-radius: var(--radius-lg);
-  font-weight: 500;
+  background: #fff3f3;
+  border: 1px solid #ffd2d2;
+  color: #a32222;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
-  animation: slideIn 0.3s ease-out;
 }
 
-/* ================================
-   🗂️ ESTADO SIN INFORMES
-================================== */
 .no-informes {
-  background: var(--surface-color);
-  border: 2px dashed var(--border-color);
-  border-radius: var(--radius-xl);
-  padding: 3rem 2rem;
-  text-align: center;
+  background: var(--surface);
+  border: 2px dashed var(--border);
   color: var(--text-secondary);
-  font-size: 1.125rem;
-  font-weight: 500;
+  padding: 28px 20px;
+  border-radius: var(--radius-lg);
+  text-align: center;
   box-shadow: var(--shadow-sm);
 }
 
 /* ================================
-   📊 TABLA DE INFORMES
+   📊 Tabla
 ================================== */
 .informes-table {
   width: 100%;
-  background: var(--surface-color);
-  border-radius: var(--radius-xl);
+  border-collapse: collapse;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow-md);
-  animation: fadeIn 0.5s ease-out;
 }
 
 .informes-table thead {
-  background: var(--primary-color);
+  background: var(--primary);
 }
 
 .informes-table thead th {
-  padding: 1.25rem 1.5rem;
+  color: #fff;
+  font-weight: 700;
   text-align: left;
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: white;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: .02em;
+  padding: 14px 16px;
+  font-size: .9rem;
 }
 
 .informes-table tbody tr {
-  border-bottom: 1px solid var(--border-color);
-  transition: box-shadow 0.2s, transform 0.2s;
+  border-bottom: 1px solid var(--border);
+  transition: background .15s ease, transform .15s ease, box-shadow .15s ease;
   cursor: pointer;
 }
 
 .informes-table tbody tr:hover {
-  background: #f5faff;
-  box-shadow: var(--shadow-lg);
-  transform: scale(1.01);
+  background: #f2f7ff;
+  transform: scale(1.002);
+  box-shadow: inset 0 0 0 1px #e3eeff;
 }
 
 .informes-table tbody td {
-  padding: 1.25rem 1.5rem;
-  color: var(--text-primary);
-  font-weight: 500;
+  padding: 14px 16px;
   vertical-align: middle;
+  color: var(--text-main);
+  font-weight: 500;
 }
 
 .informes-table tbody td:first-child {
-  font-weight: 600;
-  color: var(--primary-color);
+  color: var(--primary);
+  font-weight: 700;
 }
 
 /* ================================
-   🪟 MODAL
+   🪟 Modal
 ================================== */
 .modal-informe-bg {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  inset: 0;
+  background: rgba(8, 24, 64, .46);
+  backdrop-filter: blur(4px);
+  display: grid;
+  place-items: center;
+  padding: 16px;
   z-index: 1000;
-  padding: 1rem;
-  animation: fadeIn 0.3s ease-out;
+  animation: fadeIn .2s ease-out;
 }
 
 .modal-informe {
-  background: var(--surface-color);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-xl);
-  max-width: 800px;
-  width: 100%;
+  width: min(880px, 100%);
   max-height: 90vh;
-  overflow-y: auto;
+  overflow: auto;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border);
+  animation: slideUp .22s ease-out;
   position: relative;
-  border: 2px solid var(--border-color);
-  animation: slideUp 0.3s ease-out;
 }
 
 .modal-close {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: var(--danger-color);
-  color: white;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
   border: none;
-  border-radius: 50%;
-  width: 2.5rem;
-  height: 2.5rem;
-  font-size: 1.25rem;
+  background: var(--danger);
+  color: #fff;
+  font-size: 20px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s, transform 0.2s;
-  box-shadow: var(--shadow-md);
-  z-index: 10;
+  display: grid;
+  place-items: center;
+  box-shadow: var(--shadow-sm);
+  transition: transform .12s ease, background .12s ease;
 }
 
-.modal-close:hover {
-  background: var(--danger-hover);
-  transform: scale(1.1);
-}
+.modal-close:hover { transform: scale(1.06); }
 
 .modal-informe h3 {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--primary-color);
   margin: 0;
-  padding: 2rem 2rem 1rem;
-  border-bottom: 2px solid var(--border-color);
+  padding: 20px 22px 14px;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--primary);
+  border-bottom: 1px solid var(--border);
 }
 
 .modal-informe-content {
-  padding: 2rem;
+  padding: 18px 22px 22px;
 }
 
-/* Tabla interna */
+/* ================================
+   🧾 Tabla interna del modal
+================================== */
 .modal-informe-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border-color);
 }
 
 .modal-informe-table th {
-  background: linear-gradient(135deg, #f5faff, #eaf3ff);
-  padding: 1rem 1.25rem;
+  width: 220px;
   text-align: left;
-  font-weight: 600;
-  color: var(--primary-color);
-  border-bottom: 1px solid var(--border-color);
-  width: 200px;
+  background: linear-gradient(180deg, #f4f8ff, #eef4ff);
+  color: var(--text-main);
+  padding: 12px 14px;
+  font-weight: 700;
+  border-bottom: 1px solid var(--border);
   vertical-align: top;
 }
 
 .modal-informe-table td {
-  padding: 1rem 1.25rem;
+  padding: 12px 14px;
   color: var(--text-secondary);
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border);
+  line-height: 1.5;
   vertical-align: top;
-  line-height: 1.6;
 }
 
-.modal-informe-table tr:hover {
-  background: #f5faff;
+.modal-informe-table tr:last-child th,
+.modal-informe-table tr:last-child td {
+  border-bottom: 0;
 }
 
 /* ================================
-   📎 ENLACES DE IMAGEN
+   ⬇️ Botones (PDF / Excel) dentro del modal
+   (tu JSX no usa clases, así que estilizamos
+   los <button> directamente en el contenido)
+================================== */
+.modal-informe-content button {
+  appearance: none;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  margin: 6px 6px 0 0;
+  font-weight: 700;
+  letter-spacing: .02em;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+}
+
+.modal-informe-content button:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.modal-informe-content button:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+/* primer botón (PDF) y segundo (Excel) por orden */
+.modal-informe-content button:nth-of-type(1) {
+  background: var(--danger);
+  color: #fff;
+}
+.modal-informe-content button:nth-of-type(1):hover {
+  filter: brightness(.95);
+}
+
+.modal-informe-content button:nth-of-type(2) {
+  background: var(--success);
+  color: #fff;
+}
+.modal-informe-content button:nth-of-type(2):hover {
+  filter: brightness(.96);
+}
+
+/* ================================
+   🔗 Chips para imágenes (si llegaran a usarse)
 ================================== */
 .rubius {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 8px;
 }
-
 .rubius a {
-  background: var(--primary-color);
-  color: white;
+  display: inline-block;
+  background: #eef4ff;
+  color: var(--primary);
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  border-radius: 999px;
   text-decoration: none;
-  padding: 0.5rem 1rem;
-  border-radius: var(--radius-md);
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: box-shadow 0.2s, transform 0.2s;
-  box-shadow: var(--shadow-sm);
+  font-weight: 700;
+  font-size: .85rem;
+  transition: background .12s ease, transform .12s ease;
 }
-
 .rubius a:hover {
-  transform: scale(1.03);
-  box-shadow: var(--shadow-md);
+  background: #e6efff;
+  transform: translateY(-1px);
 }
 
 /* ================================
-   ⬇️ BOTONES DE EXPORTACIÓN
+   🌐 Scrollbar modal
 ================================== */
-.modal-informe-content button {
-  background: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: var(--radius-lg);
-  padding: 0.75rem 1.5rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s, transform 0.2s;
-  box-shadow: var(--shadow-md);
-  font-size: 0.875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+.modal-informe::-webkit-scrollbar { width: 10px; }
+.modal-informe::-webkit-scrollbar-track { background: #f1f5ff; }
+.modal-informe::-webkit-scrollbar-thumb {
+  background: #c7d7fb;
+  border-radius: 8px;
 }
-
-.modal-informe-content button:hover {
-  background: var(--primary-hover);
-  transform: scale(1.03);
-  box-shadow: var(--shadow-lg);
-}
-
-.modal-informe-content button:first-of-type {
-  background: var(--danger-color);
-  margin-right: 1rem;
-}
-.modal-informe-content button:first-of-type:hover {
-  background: var(--danger-hover);
-}
-
-.modal-informe-content button:last-of-type {
-  background: var(--success-color);
-}
-.modal-informe-content button:last-of-type:hover {
-  background: #16a34a;
-}
+.modal-informe::-webkit-scrollbar-thumb:hover { background: #b4c7f9; }
 
 /* ================================
-   🔄 CARGA
+   🧠 Accesibilidad
 ================================== */
-.loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem;
-  color: var(--text-secondary);
-}
-
-.loading::after {
-  content: '';
-  width: 2rem;
-  height: 2rem;
-  border: 3px solid var(--border-color);
-  border-top: 3px solid var(--primary-color);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-left: 1rem;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* ================================
-   🧠 ACCESIBILIDAD
-================================== */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
 .informes-table tbody tr:focus,
 .modal-close:focus,
 .modal-informe-content button:focus,
 .rubius a:focus {
-  outline: 2px solid var(--primary-color);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
 /* ================================
-   🖱️ SCROLLBAR PERSONALIZADO
+   🎞️ Animaciones
 ================================== */
-.modal-informe::-webkit-scrollbar {
-  width: 8px;
+@keyframes fadeIn {
+  from { opacity: 0 }
+  to   { opacity: 1 }
 }
-
-.modal-informe::-webkit-scrollbar-track {
-  background: var(--background-color);
-  border-radius: var(--radius-sm);
-}
-
-.modal-informe::-webkit-scrollbar-thumb {
-  background: var(--secondary-color);
-  border-radius: var(--radius-sm);
-}
-
-.modal-informe::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
+@keyframes slideUp {
+  from { transform: translateY(8px); opacity: .96 }
+  to   { transform: translateY(0);   opacity: 1 }
 }
 
 /* ================================
-   📱 RESPONSIVE DESIGN
+   📱 Responsive
 ================================== */
-@media (max-width: 1024px) {
-  .informes-containerComponent { padding: 1.5rem; }
-  .informes-title { font-size: 2rem; }
-  .informes-table { font-size: 0.875rem; }
-  .informes-table th, .informes-table td { padding: 1rem; }
+@media (max-width: 900px) {
+  .modal-informe-table th { width: 170px; }
 }
 
-@media (max-width: 768px) {
-  .informes-containerComponent { padding: 1rem; }
-  .informes-title { font-size: 1.75rem; }
-  .informes-table { font-size: 0.8rem; border-radius: var(--radius-lg); }
-  .informes-table th, .informes-table td { padding: 0.75rem 0.5rem; }
-  .modal-informe { margin: 0.5rem; max-height: 95vh; }
-  .modal-informe h3 { font-size: 1.5rem; padding: 1.5rem 1.5rem 1rem; }
-  .modal-informe-content { padding: 1.5rem; }
-  .modal-informe-table th { width: 120px; font-size: 0.8rem; }
-  .modal-informe-table th, .modal-informe-table td { padding: 0.75rem; }
-  .modal-informe-content button { padding: 0.625rem 1.25rem; font-size: 0.8rem; }
+@media (max-width: 740px) {
+  .informes-containerComponent { padding: 16px; }
+  .informes-title { font-size: 1.45rem; }
+  .informes-table thead th,
+  .informes-table tbody td { padding: 12px; }
+  .modal-informe { max-height: 92vh; }
+  .modal-informe h3 { padding: 16px; }
+  .modal-informe-content { padding: 16px; }
+  .modal-informe-table th { width: 130px; font-size: .9rem; }
+  .modal-informe-table td { font-size: .92rem; }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 560px) {
   .informes-table { display: block; overflow-x: auto; white-space: nowrap; }
   .modal-informe-table { display: block; overflow-x: auto; }
-  .modal-informe-content button:first-of-type { margin-right: 0.5rem; margin-bottom: 0.5rem; }
-  .rubius { flex-direction: column; }
-  .rubius a { text-align: center; }
 }
