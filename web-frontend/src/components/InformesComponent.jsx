@@ -5,6 +5,9 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { BookText } from 'lucide-react';
 
+const BASE = (import.meta.env.VITE_API_BASE?.replace(/\/$/, '') || 'http://localhost:3000');
+
+/* ---- helpers de formato y compat ---- */
 function fmtCL(dt) {
   if (!dt) return '-';
   const d = new Date(dt);
@@ -13,44 +16,24 @@ function fmtCL(dt) {
   const fecha = d.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' });
   return `${hora} ${fecha}`;
 }
-
-function getCliente(inf) {
-  // nuevo -> inf.cliente  | legacy -> inf.cliente_id
-  return inf?.cliente || inf?.cliente_id || {};
-}
-
+function getCliente(inf) { return inf?.cliente || inf?.cliente_id || {}; }
 function getTecnicoNombre(inf) {
-  // preferimos técnico populado; si no, la firma del técnico; y último fallback legacy array
   if (inf?.tecnico && typeof inf.tecnico === 'object') return inf.tecnico.nombre || '-';
   if (inf?.firmaTecnico?.nombre) return inf.firmaTecnico.nombre;
   if (Array.isArray(inf?.firma_tecnico)) return inf.firma_tecnico[0] || '-';
   return '-';
 }
-
-function getFechaActividad(inf) {
-  return inf?.fechaActividad || inf?.fecha_actividad || null;
-}
-
-function getUbicacion(inf) {
-  return inf?.ubicacion || {};
-}
-
+function getFechaActividad(inf) { return inf?.fechaActividad || inf?.fecha_actividad || null; }
+function getUbicacion(inf) { return inf?.ubicacion || {}; }
 function getMateriales(inf) {
-  // nuevo: [{nombre,cantidad,valor}]  | legacy: ['nombre','cantidad','valor'] o cosas raras
   if (Array.isArray(inf?.materialesUtilizados)) return inf.materialesUtilizados;
   if (Array.isArray(inf?.materiales_utilizados)) {
-    const arr = inf.materiales_utilizados;
-    // si viene como array plano, lo mapeamos a 1 ítem
-    if (arr.length >= 1 && typeof arr[0] === 'string') {
-      const [nombre = '', cantidad = '', valor = ''] = arr;
-      return [{ nombre, cantidad, valor }];
-    }
+    const [nombre = '', cantidad = '', valor = ''] = inf.materiales_utilizados;
+    return [{ nombre, cantidad, valor }];
   }
   return [];
 }
-
 function getFirma(inf) {
-  // nuevo: objeto | legacy: array
   if (inf?.firmaTecnico) return inf.firmaTecnico;
   if (Array.isArray(inf?.firma_tecnico)) {
     const [nombre = '', rut = '', fecha = ''] = inf.firma_tecnico;
@@ -58,19 +41,11 @@ function getFirma(inf) {
   }
   return { nombre: '', rut: '', fecha: '' };
 }
+function getTipoAislador(inf) { return inf?.tipoAislador || inf?.tipo_aislador || '-'; }
+function getEstado(inf) { return inf?.estado || 'pendiente'; }
+function getFacturado(inf) { return !!inf?.facturado; }
 
-function getTipoAislador(inf) {
-  return inf?.tipoAislador || inf?.tipo_aislador || '-';
-}
-
-function getEstado(inf) {
-  return inf?.estado || 'pendiente';
-}
-
-function getFacturado(inf) {
-  return !!inf?.facturado;
-}
-
+// IMÁGENES (opcional)
 async function getImageBase64(url) {
   const res = await fetch(url);
   const blob = await res.blob();
@@ -91,42 +66,33 @@ function InformesComponent() {
   useEffect(() => {
     const cached = localStorage.getItem('informes_list');
     if (cached) {
-      try {
-        setInformes(JSON.parse(cached));
-      } catch {
-        localStorage.removeItem('informes_list');
-      }
+      try { setInformes(JSON.parse(cached)); } catch { localStorage.removeItem('informes_list'); }
     }
     const obtenerInformes = async () => {
       try {
         const token = localStorage.getItem('token');
-        if (!token) {
-          setError('No hay token de autenticación');
-          return;
-        }
+        if (!token) { setError('No hay token de autenticación'); return; }
         const payload = JSON.parse(atob(token.split('.')[1]));
         const rol = payload.rol;
         const endpoint = rol === 'admin'
-          ? 'http://localhost:3000/api/informes'
-          : 'http://localhost:3000/api/informes/mios';
+          ? `${BASE}/api/informes`
+          : `${BASE}/api/informes/mios`;
 
-        const response = await fetch(endpoint, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const res = await fetch(endpoint, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) throw new Error('No se pudieron obtener los informes');
 
-        if (!response.ok) throw new Error('No se pudieron obtener los informes');
-
-        const data = await response.json();
-        setInformes(data.informes || []);
-        localStorage.setItem('informes_list', JSON.stringify(data.informes || []));
+        const data = await res.json();
+        const list = data.informes || [];
+        setInformes(list);
+        localStorage.setItem('informes_list', JSON.stringify(list));
       } catch (err) {
         setError(err.message);
       }
     };
-
     obtenerInformes();
   }, []);
 
+  /* ---------- Exportar ---------- */
   const exportarPDF = async () => {
     if (!selectedInforme) return;
     const doc = new jsPDF();
@@ -143,55 +109,53 @@ function InformesComponent() {
       ['RUT', cliente.rut || '-'],
       ['Estado', getEstado(selectedInforme)],
       ['Facturado', getFacturado(selectedInforme) ? 'Sí' : 'No'],
-      ['Fecha Actividad', selectedInforme.fechaActividad ? fmtCL(selectedInforme.fechaActividad) : (selectedInforme.fecha_actividad ? fmtCL(selectedInforme.fecha_actividad) : '-')],
-      ['Fecha Aprobación', selectedInforme.fechaAprobacion ? fmtCL(selectedInforme.fechaAprobacion) : (selectedInforme.fecha_aprobacion ? fmtCL(selectedInforme.fecha_aprobacion) : '-')],
-      ['Fecha Envío', selectedInforme.fechaEnvio ? fmtCL(selectedInforme.fechaEnvio) : (selectedInforme.fecha_envio ? fmtCL(selectedInforme.fecha_envio) : '-')],
-      ['Fecha Facturación', selectedInforme.fechaFacturacion ? fmtCL(selectedInforme.fechaFacturacion) : (selectedInforme.fecha_facturacion ? fmtCL(selectedInforme.fecha_facturacion) : '-')],
-      [
-        'Firma Técnico',
-        `Nombre: ${firma.nombre || '-'}\n` +
-        `RUT: ${firma.rut || '-'}\n` +
-        `Fecha: ${firma.fecha ? fmtCL(firma.fecha) : '-'}`
-      ],
-      [
-        'Materiales Utilizados',
-        materiales.length
-          ? materiales
-              .map(m => `Nombre: ${m?.nombre || '-'} — Cantidad: ${m?.cantidad || '-'} — Valor: ${m?.valor || '-'}`)
-              .join('\n')
-          : '-'
-      ],
+      ['Fecha Actividad', (() => {
+        const v = selectedInforme.fechaActividad ?? selectedInforme.fecha_actividad;
+        return v ? fmtCL(v) : '-';
+      })()],
+      ['Fecha Aprobación', (() => {
+        const v = selectedInforme.fechaAprobacion ?? selectedInforme.fecha_aprobacion;
+        return v ? fmtCL(v) : '-';
+      })()],
+      ['Fecha Envío', (() => {
+        const v = selectedInforme.fechaEnvio ?? selectedInforme.fecha_envio;
+        return v ? fmtCL(v) : '-';
+      })()],
+      ['Fecha Facturación', (() => {
+        const v = selectedInforme.fechaFacturacion ?? selectedInforme.fecha_facturacion;
+        return v ? fmtCL(v) : '-';
+      })()],
+      ['Firma Técnico',
+        `Nombre: ${firma.nombre || '-'}\nRUT: ${firma.rut || '-'}\nFecha: ${firma.fecha ? fmtCL(firma.fecha) : '-'}`],
+      ['Materiales Utilizados',
+        (materiales.length
+          ? materiales.map(m => `Nombre: ${m?.nombre || '-'} — Cantidad: ${m?.cantidad || '-'} — Valor: ${m?.valor || '-'}`).join('\n')
+          : '-')],
       ['Observaciones', selectedInforme.observaciones || '-'],
       ['Tipo Aislador', getTipoAislador(selectedInforme)],
       ['Ubicación', [ubicacion.direccion, ubicacion.comuna].filter(Boolean).join(', ') || '-'],
     ];
 
-    autoTable(doc, {
-      body: rows,
-      startY: 22,
-      styles: { cellWidth: 'wrap' },
-      headStyles: { fillColor: [41, 128, 185] },
-    });
+    autoTable(doc, { body: rows, startY: 22, styles: { cellWidth: 'wrap' }, headStyles: { fillColor: [24, 93, 200] } });
 
-    // Si hay imágenes (opcional): insertar hasta 3
+    // IMÁGENES (opcional)
     if (Array.isArray(selectedInforme.imagenes) && selectedInforme.imagenes.length) {
       let y = (doc.lastAutoTable?.finalY || 22) + 10;
       for (let i = 0; i < selectedInforme.imagenes.length && i < 3; i++) {
-        const url = selectedInforme.imagenes[i];
         try {
-          const imgData = await getImageBase64(url);
+          const imgData = await getImageBase64(selectedInforme.imagenes[i]);
           const fmt = String(imgData).startsWith('data:image/png') ? 'PNG' : 'JPEG';
           doc.text(`Imagen ${i + 1}:`, 14, y);
-          doc.addImage(imgData, fmt, 14, y + 2, 40, 30);
-          y += 35;
-        } catch (e) {
+          doc.addImage(imgData, fmt, 14, y + 2, 50, 38);
+          y += 45;
+        } catch {
           doc.text(`No se pudo cargar la imagen ${i + 1}`, 14, y);
           y += 10;
         }
       }
     }
 
-    doc.save('informe.pdf');
+    doc.save(`informe-${selectedInforme._id || 'sin-id'}.pdf`);
   };
 
   const exportarExcel = () => {
@@ -208,30 +172,34 @@ function InformesComponent() {
       ['RUT', cliente.rut || '-'],
       ['Estado', getEstado(selectedInforme)],
       ['Facturado', getFacturado(selectedInforme) ? 'Sí' : 'No'],
-      ['Fecha Actividad', selectedInforme.fechaActividad ? fmtCL(selectedInforme.fechaActividad) : (selectedInforme.fecha_actividad ? fmtCL(selectedInforme.fecha_actividad) : '-')],
-      ['Fecha Aprobación', selectedInforme.fechaAprobacion ? fmtCL(selectedInforme.fechaAprobacion) : (selectedInforme.fecha_aprobacion ? fmtCL(selectedInforme.fecha_aprobacion) : '-')],
-      ['Fecha Envío', selectedInforme.fechaEnvio ? fmtCL(selectedInforme.fechaEnvio) : (selectedInforme.fecha_envio ? fmtCL(selectedInforme.fecha_envio) : '-')],
-      ['Fecha Facturación', selectedInforme.fechaFacturacion ? fmtCL(selectedInforme.fechaFacturacion) : (selectedInforme.fecha_facturacion ? fmtCL(selectedInforme.fecha_facturacion) : '-')],
-      [
-        'Firma Técnico',
-        `Nombre: ${firma.nombre || '-'}\n` +
-        `RUT: ${firma.rut || '-'}\n` +
-        `Fecha: ${firma.fecha ? fmtCL(firma.fecha) : '-'}`
-      ],
-      [
-        'Materiales Utilizados',
-        materiales.length
-          ? materiales
-              .map(m => `Nombre: ${m?.nombre || '-'} — Cantidad: ${m?.cantidad || '-'} — Valor: ${m?.valor || '-'}`)
-              .join('\n')
-          : '-'
-      ],
+      ['Fecha Actividad', (() => {
+        const v = selectedInforme.fechaActividad ?? selectedInforme.fecha_actividad;
+        return v ? fmtCL(v) : '-';
+      })()],
+      ['Fecha Aprobación', (() => {
+        const v = selectedInforme.fechaAprobacion ?? selectedInforme.fecha_aprobacion;
+        return v ? fmtCL(v) : '-';
+      })()],
+      ['Fecha Envío', (() => {
+        const v = selectedInforme.fechaEnvio ?? selectedInforme.fecha_envio;
+        return v ? fmtCL(v) : '-';
+      })()],
+      ['Fecha Facturación', (() => {
+        const v = selectedInforme.fechaFacturacion ?? selectedInforme.fecha_facturacion;
+        return v ? fmtCL(v) : '-';
+      })()],
+      ['Firma Técnico',
+        `Nombre: ${firma.nombre || '-'}\nRUT: ${firma.rut || '-'}\nFecha: ${firma.fecha ? fmtCL(firma.fecha) : '-'}`],
+      ['Materiales Utilizados',
+        (materiales.length
+          ? materiales.map(m => `Nombre: ${m?.nombre || '-'} — Cantidad: ${m?.cantidad || '-'} — Valor: ${m?.valor || '-'}`).join('\n')
+          : '-')],
       ['Observaciones', selectedInforme.observaciones || '-'],
       ['Tipo Aislador', getTipoAislador(selectedInforme)],
       ['Ubicación', [ubicacion.direccion, ubicacion.comuna].filter(Boolean).join(', ') || '-'],
     ];
 
-    // Si hay imágenes, agregamos filas con sus URLs
+    // IMÁGENES (opcional)
     if (Array.isArray(selectedInforme.imagenes) && selectedInforme.imagenes.length > 0) {
       selectedInforme.imagenes.forEach((url, idx) => data.push([`Imagen ${idx + 1}`, url]));
     }
@@ -239,12 +207,12 @@ function InformesComponent() {
     const ws = XLSX.utils.aoa_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Informe');
-    XLSX.writeFile(wb, 'informe.xlsx');
+    XLSX.writeFile(wb, `informe-${selectedInforme._id || 'sin-id'}.xlsx`);
   };
 
+  /* ---------- modal ---------- */
   const renderModal = () => {
     if (!modalOpen || !selectedInforme) return null;
-
     const cliente = getCliente(selectedInforme);
     const ubicacion = getUbicacion(selectedInforme);
     const firma = getFirma(selectedInforme);
@@ -294,6 +262,7 @@ function InformesComponent() {
                 <tr><th>Ubicación</th><td>{[ubicacion.direccion, ubicacion.comuna].filter(Boolean).join(', ') || '-'}</td></tr>
               </tbody>
             </table>
+
             <div style={{ textAlign: 'center', paddingTop: '1.2rem' }}>
               <button onClick={exportarPDF} style={{ background: '#d12e2e', color: '#fff', border: 'none', borderRadius: 4, padding: '0.5rem 1rem', cursor: 'pointer', marginRight: 8 }}>PDF</button>
               <button onClick={exportarExcel} style={{ background: '#388e3c', color: '#fff', border: 'none', borderRadius: 4, padding: '0.5rem 1rem', cursor: 'pointer' }}>EXCEL</button>
@@ -304,6 +273,7 @@ function InformesComponent() {
     );
   };
 
+  /* ---------- render ---------- */
   return (
     <div className="informes-containerComponent informes-full-height">
       <div className="informes-container">
@@ -338,11 +308,7 @@ function InformesComponent() {
               const cliente = getCliente(informe);
               const fechaAct = getFechaActividad(informe);
               return (
-                <tr
-                  key={informe._id}
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => { setSelectedInforme(informe); setModalOpen(true); }}
-                >
+                <tr key={informe._id} style={{ cursor: 'pointer' }} onClick={() => { setSelectedInforme(informe); setModalOpen(true); }}>
                   <td><div>{getTecnicoNombre(informe)}</div></td>
                   <td>{cliente.nombre || '-'}</td>
                   <td>{cliente.correo || '-'}</td>
@@ -356,6 +322,7 @@ function InformesComponent() {
           </tbody>
         </table>
       )}
+
       {renderModal()}
     </div>
   );

@@ -5,6 +5,9 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
+/* base de la API desde .env */
+const BASE = (import.meta.env.VITE_API_BASE?.replace(/\/$/, '') || 'http://localhost:3000');
+
 /* utilidades de fecha */
 function fmtCL(dt) {
   if (!dt) return '-';
@@ -54,8 +57,8 @@ function InformesAdmin() {
       const payload = JSON.parse(atob(token.split('.')[1]));
       const rol = payload?.rol;
       return rol === 'admin'
-        ? 'http://localhost:3000/api/informes'
-        : 'http://localhost:3000/api/informes/mios';
+        ? `${BASE}/api/informes`
+        : `${BASE}/api/informes/mios`;
     } catch {
       return null;
     }
@@ -75,7 +78,7 @@ function InformesAdmin() {
       if (!isAdmin) return;
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch('http://localhost:3000/api/usuarios?rol=tecnico', {
+        const res = await fetch(`${BASE}/api/usuarios?rol=tecnico`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {
@@ -227,7 +230,6 @@ function InformesAdmin() {
      EXPORTAR (cliente)
   ============================ */
 
-  // convierte URL de imagen a base64 para incrustar en PDF
   async function getImageBase64(url) {
     const res = await fetch(url);
     const blob = await res.blob();
@@ -239,7 +241,6 @@ function InformesAdmin() {
     });
   }
 
-  // arma filas para PDF/Excel desde nuestro modelo nuevo (con fallback legacy)
   function buildExportRows(inf) {
     const cliente = inf?.cliente || {};
     const ubic = inf?.ubicacion || {};
@@ -290,7 +291,6 @@ function InformesAdmin() {
       headStyles: { fillColor: [24, 93, 200] }
     });
 
-    // Agregar hasta 3 imágenes debajo de la tabla
     if (Array.isArray(inf.imagenes) && inf.imagenes.length) {
       let y = (doc.lastAutoTable?.finalY || 22) + 10;
       for (let i = 0; i < inf.imagenes.length && i < 3; i++) {
@@ -313,19 +313,15 @@ function InformesAdmin() {
 
   function exportExcel(inf) {
     const rows = buildExportRows(inf);
-
-    // además, añadir URLs de imágenes como filas extra
     if (Array.isArray(inf.imagenes) && inf.imagenes.length) {
       inf.imagenes.forEach((url, idx) => rows.push([`Imagen ${idx + 1}`, url]));
     }
-
     const ws = XLSX.utils.aoa_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Informe');
     XLSX.writeFile(wb, `informe-${inf._id || 'sin-id'}.xlsx`);
   }
 
-  // API pública usada por los botones de la tabla/modal (mantenemos misma firma)
   const handleExport = async (informeId, type /* 'pdf' | 'excel' */) => {
     try {
       const inf = informes.find(i => i._id === informeId);
@@ -398,8 +394,8 @@ function InformesAdmin() {
       if (isAdmin && form.tecnicoId) body.tecnico = form.tecnicoId;
 
       const url = modalMode === 'create'
-        ? 'http://localhost:3000/api/informes'
-        : `http://localhost:3000/api/informes/${selected._id}`;
+        ? `${BASE}/api/informes`
+        : `${BASE}/api/informes/${selected._id}`;
       const method = modalMode === 'create' ? 'POST' : 'PATCH';
 
       const res = await fetch(url, {
@@ -458,7 +454,7 @@ function InformesAdmin() {
     try {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No hay token de autenticación');
-      const res = await fetch(`http://localhost:3000/api/informes/${selected._id}`, {
+      const res = await fetch(`${BASE}/api/informes/${selected._id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -650,7 +646,6 @@ function InformesAdmin() {
                   </button>
                 </>
               )}
-              
             </div>
           </div>
         </div>

@@ -2,8 +2,10 @@ import React, { useEffect, useState, useRef } from 'react';
 import Header from '../components/Header';
 import BackgroundComponent from '../components/BackgroundComponent';
 import '../styles/UsuariosAdminPage.css';
-import { User } from 'lucide-react';
-import { Edit, Trash } from 'lucide-react';
+import { User, Edit, Trash } from 'lucide-react';
+
+const API = import.meta.env.VITE_API_BASE || 'http://localhost:3000';
+
 function UsuariosAdminPage() {
   const [usuarios, setUsuarios] = useState([]);
   const [formData, setFormData] = useState({
@@ -21,16 +23,27 @@ function UsuariosAdminPage() {
   const [correoConfirmacion, setCorreoConfirmacion] = useState('');
   const [filtro, setFiltro] = useState('');
 
-  const formRef = useRef(null); // Referencia al formulario
+  const formRef = useRef(null);
+
+  const getToken = () => localStorage.getItem('token');
+
+  const getActivo = (u) => {
+    // normaliza “estado/activo” del backend viejo/nuevo
+    if (typeof u?.activo === 'boolean') return u.activo;
+    if (typeof u?.estado === 'boolean') return u.estado;
+    if (typeof u?.estado === 'string') return u.estado.toLowerCase() === 'activo' || u.estado === 'true';
+    return false;
+  };
 
   const fetchUsuarios = async () => {
-    const token = localStorage.getItem('token');
+    const token = getToken();
     if (!token) return console.warn('No hay token disponible');
 
     try {
-      const res = await fetch('http://localhost:3000/api/usuarios', {
+      const res = await fetch(`${API}/api/usuarios`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      if (!res.ok) throw new Error('No se pudieron obtener los usuarios');
       const data = await res.json();
       setUsuarios(data.usuarios || []);
     } catch (err) {
@@ -44,20 +57,25 @@ function UsuariosAdminPage() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value });
+    setFormData((s) => ({ ...s, [name]: type === 'checkbox' ? checked : value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
+    const token = getToken();
     if (!token) return alert('Token no disponible');
 
     try {
       const url = editandoId
-        ? `http://localhost:3000/api/usuarios/${editandoId}`
-        : 'http://localhost:3000/api/usuarios';
-
+        ? `${API}/api/usuarios/${editandoId}`
+        : `${API}/api/usuarios`;
       const method = editandoId ? 'PATCH' : 'POST';
+
+      // no mandes contraseña vacía en edición
+      const payload = { ...formData };
+      if (editandoId && !payload.contraseña) {
+        delete payload.contraseña;
+      }
 
       const res = await fetch(url, {
         method,
@@ -65,11 +83,11 @@ function UsuariosAdminPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
 
       const data = await res.json();
-      console.log('Respuesta del servidor:', data);
+      if (!res.ok) throw new Error(data?.mensaje || data?.error || 'Error al guardar usuario');
 
       await fetchUsuarios();
       setEditandoId(null);
@@ -83,34 +101,32 @@ function UsuariosAdminPage() {
         rut: '',
         activo: true
       });
+
+      // scroll al inicio del listado si quieres
+      // window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       console.error('Error al guardar usuario', err);
+      alert(err.message || 'Error al guardar usuario');
     }
   };
 
-const handleEditar = (usuario) => {
-  setFormData({
-    nombre: usuario.nombre,
-    apellido: usuario.apellido || '',
-    correo: usuario.correo,
-    contraseña: '',
-    rol: usuario.rol,
-    telefono: usuario.telefono || '',
-    rut: usuario.rut || '',
-    activo:
-      usuario?.activo === true ||
-      usuario?.estado === true ||
-      usuario?.estado === 'activo' ||
-      usuario?.estado === 'true'
-  });
-  setEditandoId(usuario._id);
+  const handleEditar = (usuario) => {
+    setFormData({
+      nombre: usuario.nombre || '',
+      apellido: usuario.apellido || '',
+      correo: usuario.correo || '',
+      contraseña: '',
+      rol: usuario.rol || 'tecnico',
+      telefono: usuario.telefono || '',
+      rut: usuario.rut || '',
+      activo: getActivo(usuario)
+    });
+    setEditandoId(usuario._id);
 
-  setTimeout(() => {
-    if (formRef.current) {
-      formRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, 100);
-};
+    setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
 
   const handleEliminarClick = (usuario) => {
     setUsuarioAEliminar(usuario);
@@ -118,25 +134,27 @@ const handleEditar = (usuario) => {
   };
 
   const confirmarEliminacion = async () => {
-    const token = localStorage.getItem('token');
+    const token = getToken();
     if (!usuarioAEliminar || correoConfirmacion !== usuarioAEliminar.correo || !token) {
       alert('El correo ingresado no coincide.');
       return;
     }
 
     try {
-      const res = await fetch(`http://localhost:3000/api/usuarios/${usuarioAEliminar._id}`, {
+      const res = await fetch(`${API}/api/usuarios/${usuarioAEliminar._id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
 
       const data = await res.json();
-      console.log('Usuario eliminado:', data);
+      if (!res.ok) throw new Error(data?.mensaje || data?.error || 'No se pudo eliminar');
+
       await fetchUsuarios();
       setUsuarioAEliminar(null);
       setCorreoConfirmacion('');
     } catch (err) {
       console.error('Error al eliminar usuario', err);
+      alert(err.message || 'Error al eliminar usuario');
     }
   };
 
@@ -169,35 +187,32 @@ const handleEditar = (usuario) => {
             <option value="tecnico">Técnico</option>
           </select>
           <label>
-          Activo:
-          <input
-            type="checkbox"
-            name="activo"
-            checked={Boolean(formData.activo)}
-            onChange={(e) =>
-              setFormData({ ...formData, activo: e.target.checked })
-            }
-          />
-        </label>
+            Activo:
+            <input
+              type="checkbox"
+              name="activo"
+              checked={Boolean(formData.activo)}
+              onChange={(e) => setFormData({ ...formData, activo: e.target.checked })}
+            />
+          </label>
           <button type="submit">{editandoId ? 'Actualizar Usuario' : 'Crear Usuario'}</button>
         </form>
 
         <h1 className="admin-title" style={{ margin: '32px 0 16px', textAlign: 'center' }}>
           Lista de Usuarios
         </h1>
+
         <div className="user-table-wrapper">
-            {/* Input de búsqueda */}
-        <input
-          type="text"
-          placeholder="Buscar por nombre, correo, rol..."
-          value={filtro}
-          onChange={(e) => setFiltro(e.target.value)}
-          className="search-input"
-        />
-
-
+          <input
+            type="text"
+            placeholder="Buscar por nombre, correo, rol..."
+            value={filtro}
+            onChange={(e) => setFiltro(e.target.value)}
+            className="search-input"
+          />
         </div>
-              <table className="user-table">
+
+        <table className="user-table">
           <thead>
             <tr>
               <th>Nombre</th>
@@ -210,21 +225,21 @@ const handleEditar = (usuario) => {
           <tbody>
             {usuarios
               .filter((u) =>
-                `${u.nombre} ${u.apellido} ${u.correo} ${u.rol} ${u.estado}`
+                `${u.nombre} ${u.apellido} ${u.correo} ${u.rol} ${getActivo(u) ? 'activo' : 'inactivo'}`
                   .toLowerCase()
                   .includes(filtro.toLowerCase())
               )
               .map((u) => (
                 <tr key={u._id}>
-                  <td>{u.nombre} {u.apellido}</td>
+                  <td>{u.nombre} {u.apellido || ''}</td>
                   <td>{u.correo}</td>
                   <td>{u.rol}</td>
-                  <td>{u.estado}</td>
+                  <td>{getActivo(u) ? 'Activo' : 'Inactivo'}</td>
                   <td>
-                    <button onClick={() => handleEditar(u)} className="icon-button">
+                    <button onClick={() => handleEditar(u)} className="icon-button" title="Editar">
                       <Edit color="#fff" />
                     </button>
-                    <button onClick={() => handleEliminarClick(u)} className="icon-button">
+                    <button onClick={() => handleEliminarClick(u)} className="icon-button" title="Eliminar">
                       <Trash color="#fff" />
                     </button>
                   </td>
@@ -232,16 +247,13 @@ const handleEditar = (usuario) => {
               ))}
           </tbody>
         </table>
-        
 
-        {/* Modal de confirmación */}
         {usuarioAEliminar && (
           <div className="modal-overlay">
             <div className="modal-content">
               <h3>Confirmar eliminación</h3>
               <p>
-                ¿Estás seguro de eliminar al usuario <b>{usuarioAEliminar.nombre}</b> con rol <b>{usuarioAEliminar.rol}</b>?<br />
-                <br />
+                ¿Estás seguro de eliminar al usuario <b>{usuarioAEliminar.nombre}</b> con rol <b>{usuarioAEliminar.rol}</b>?<br /><br />
                 Para confirmar, escribe su correo exacto: <br />
                 <code>{usuarioAEliminar.correo}</code>
               </p>

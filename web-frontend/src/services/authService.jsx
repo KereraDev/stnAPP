@@ -1,13 +1,24 @@
-const API_URL = 'http://localhost:3000/api/auth';
+// src/services/authService.js
+const API_BASE = (import.meta.env.VITE_API_BASE || 'http://localhost:3000').replace(/\/+$/, '');
+const API_URL = `${API_BASE}/api/auth`;
 
 export async function login({ correo, contraseña }) {
-  const response = await fetch(`${API_URL}/login`, {
+  const res = await fetch(`${API_URL}/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    // si tu backend espera "contraseña", mantenlo así
     body: JSON.stringify({ correo, contraseña }),
   });
 
-  if (!response.ok) throw new Error('Error en login');
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error('Respuesta inválida del servidor');
+  }
 
-  return await response.json();
+  if (!res.ok) {
+    throw new Error(data?.mensaje || data?.error || `Error en login (${res.status})`);
+  }
+  return data; // { token, usuario, ... }
 }

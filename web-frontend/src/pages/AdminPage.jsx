@@ -1,23 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import Header from '../components/Header';
 import BackgroundComponent from '../components/BackgroundComponent';
-import { Users, FileText, AlertTriangle, Shield } from 'lucide-react';
+import { Users, FileText, Shield } from 'lucide-react';
 import '../styles/AdminPage.css';
 import { useNavigate } from 'react-router-dom';
 
+const API = import.meta.env.VITE_API_BASE || 'http://localhost:3000';
+
 function AdminPage() {
-  // Estados principales
   const [usuarios, setUsuarios] = useState([]);
   const [informes, setInformes] = useState([]);
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  // Formulario para crear usuario (si lo usas)
   const [form, setForm] = useState({
     nombre: '', apellido: '', correo: '', telefono: '', rut: '', rol: 'tecnico', activo: true, contraseña: ''
   });
 
-  // Secciones del panel administrativo
   const adminSections = [
     {
       id: 'usuarios',
@@ -35,65 +34,83 @@ function AdminPage() {
     },
   ];
 
-  // Cargar usuarios e informes al montar el componente
   useEffect(() => {
-    fetch('http://localhost:3000/api/usuarios', {
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-    })
-      .then(res => res.json())
-      .then(data => setUsuarios(data.usuarios || []))
-      .catch(() => setError('Error al cargar usuarios'));
+    (async () => {
+      setError('');
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No hay token de autenticación');
 
-    fetch('http://localhost:3000/api/informes', {
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-    })
-      .then(res => res.json())
-      .then(data => setInformes(data.informes || []))
-      .catch(() => setError('Error al cargar informes'));
+        const headers = { Authorization: `Bearer ${token}` };
+
+        const [uRes, iRes] = await Promise.all([
+          fetch(`${API}/api/usuarios`, { headers }),
+          fetch(`${API}/api/informes`, { headers }),
+        ]);
+
+        if (!uRes.ok) throw new Error('Error al cargar usuarios');
+        if (!iRes.ok) throw new Error('Error al cargar informes');
+
+        const uData = await uRes.json();
+        const iData = await iRes.json();
+
+        setUsuarios(uData.usuarios || []);
+        setInformes(iData.informes || []);
+      } catch (e) {
+        setError(e.message || 'Error al cargar datos');
+      }
+    })();
   }, []);
 
-  // Crear usuario
-  const handleCrearUsuario = (e) => {
+  const handleCrearUsuario = async (e) => {
     e.preventDefault();
-    fetch('http://localhost:3000/api/usuarios', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-      body: JSON.stringify(form)
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.mensaje) {
-          setUsuarios([...usuarios, { ...form, _id: data._id }]);
-        }
-      })
-      .catch(() => setError('Error al crear usuario'));
+    setError('');
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No hay token de autenticación');
+
+      const res = await fetch(`${API}/api/usuarios`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(form),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.mensaje || 'Error al crear usuario');
+
+      setUsuarios((prev) => [...prev, data.usuario || { ...form, _id: data._id }]);
+    } catch (e) {
+      setError(e.message || 'Error al crear usuario');
+    }
   };
 
-  // Navegación al hacer clic en cada sección
   const handleSectionClick = (sectionId) => {
     navigate(`/admin/${sectionId}`);
   };
 
-  // Render principal
   return (
     <BackgroundComponent header={<Header />}>
       <div className="admin-container">
-        {/* Encabezado del panel */}
         <div className="admin-header">
           <div className="admin-header-icon">
-            <Shield size={36}/>
+            <Shield size={36} />
           </div>
           <div>
             <h1 className="admin-title">Panel Administrativo</h1>
             <p className="admin-subtitle">Centro de control y gestión del sistema</p>
           </div>
         </div>
-        {/* Totales */}
+
+        {error && <p className="admin-error">{error}</p>}
+
         <div className="admin-totals">
           <span>Total usuarios: <b>{usuarios.length}</b></span>
           <span style={{ marginLeft: 24 }}>Total informes: <b>{informes.length}</b></span>
         </div>
-        {/* Secciones */}
+
         <div className="admin-sections">
           {adminSections.map((section) => {
             const IconComponent = section.icon;
@@ -104,14 +121,13 @@ function AdminPage() {
                 onClick={() => handleSectionClick(section.id)}
               >
                 <div className="admin-section-icon">
-                  <IconComponent size={32} backgroundColor="#fff" />
+                  <IconComponent size={32} />
                 </div>
                 <div className="admin-section-content">
                   <h3>{section.title}</h3>
                   <p>{section.description}</p>
                   <button className="admin-section-btn">Acceder</button>
                 </div>
-                
               </div>
             );
           })}
