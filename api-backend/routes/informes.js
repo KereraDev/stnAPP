@@ -1,143 +1,235 @@
+// routes/informes.js
 const express = require('express');
 const router = express.Router();
 const verificarToken = require('../middleware/authMiddleware');
 const { esAdmin } = require('../middleware/rolesMiddleware');
 const Informe = require('../models/Informe');
 
-/* --------- helpers --------- */
+/* ===================== helpers ===================== */
 
 const NON_EDITABLE = new Set(['_id', 'createdAt', 'updatedAt', '__v']);
+const ALLOWED_ROOT_KEYS = new Set([
+  'jefeFaena',
+  'encargado',
+  'instalacion',
+  'fechaInicio',
+  'fechaTermino',
+  'tipoIntervencion',
+  'controles',
+  'programa',
+  'controlAgua',
+  'personal',
+  'totales',
+  'equiposLavados',
+  'imagenes',
+  'observacionGeneral',
+  'firma',
+]);
 
-function getEditablePaths(model) {
-  return Object.keys(model.schema.paths).filter((k) => !NON_EDITABLE.has(k));
-}
-function isEditableKey(key, editablePaths) {
-  return editablePaths.includes(key) || editablePaths.some((p) => p.startsWith(key + '.'));
-}
-
-function toNumberOrString(x) {
-  if (x === null || x === undefined) return '';
-  const s = String(x).trim();
-  if (s === '') return '';
-  const n = Number(s.replace(',', '.'));
-  return Number.isFinite(n) ? n : s;
-}
-
-function toDateOrNull(x) {
+const asString = (v) => (v == null ? '' : String(v).trim());
+const toDateOrNull = (x) => {
   if (!x) return null;
   const d = new Date(x);
   return isNaN(d) ? null : d;
+};
+const toNumberOrNull = (x) => {
+  if (x === '' || x === null || x === undefined) return null;
+  const n = Number(String(x).replace(',', '.'));
+  return Number.isFinite(n) ? n : null;
+};
+const clamp = (n, min, max) => {
+  if (n == null) return n;
+  return Math.min(max, Math.max(min, n));
+};
+
+/* ---------- normalizadores por bloque ---------- */
+
+function normalizeControles(v = {}) {
+  return {
+    numeroSerieTermoAnemHigrometro: asString(v.numeroSerieTermoAnemHigrometro),
+    humedadAmbiente: asString(v.humedadAmbiente),
+    velocidadViento: asString(v.velocidadViento),
+    numeroSerieConductivimetro: asString(v.numeroSerieConductivimetro),
+    conductividad: asString(v.conductividad),
+    presionLavado: asString(v.presionLavado),
+  };
 }
 
-function normalizeMateriales(materiales) {
-  if (!Array.isArray(materiales)) return [];
-  return materiales
-    .map((m) => {
-      if (!m) return null;
-      if (typeof m === 'object') {
-        const nombre = (m.nombre ?? '').toString().trim();
-        const cantidad = toNumberOrString(m.cantidad);
-        const valor = toNumberOrString(m.valor);
-        if (!nombre && cantidad === '' && valor === '') return null;
-        return { nombre, cantidad, valor };
-      }
-      // string suelta -> al menos nombre
-      const nombre = String(m).trim();
-      if (!nombre) return null;
-      return { nombre, cantidad: '', valor: '' };
-    })
+function normalizePrograma(v = {}) {
+  const mes = toDateOrNull(v.mes);
+  const estructurasLavadas = toNumberOrNull(v.estructurasLavadas) ?? 0;
+  const estructurasPendientes = toNumberOrNull(v.estructurasPendientes) ?? 0;
+  const porcentajeAvance = clamp(toNumberOrNull(v.porcentajeAvance) ?? 0, 0, 100);
+  const cantidadEst = toNumberOrNull(v.cantidadEst) ?? 0;
+  const numeroCadenasLavadas = toNumberOrNull(v.numeroCadenasLavadas) ?? 0;
+
+  return {
+    mes: mes || undefined,
+    estructurasLavadas,
+    estructurasPendientes,
+    porcentajeAvance,
+    cantidadEst,
+    tramo: asString(v.tramo),
+    numeroCadenasLavadas,
+  };
+}
+
+function normalizeControlAgua(v = {}) {
+  const fecha = toDateOrNull(v.fecha);
+  return {
+    fecha: fecha || undefined,
+    responsable: asString(v.responsable),
+    proveedorAgua: asString(v.proveedorAgua),
+    consumoDiario: asString(v.consumoDiario),
+  };
+}
+
+function normalizePersonal(v = {}) {
+  const num = (x) => toNumberOrNull(x) ?? 0;
+  return {
+    supervisor: num(v.supervisor),
+    jefeBrigada: num(v.jefeBrigada),
+    prevencionista: num(v.prevencionista),
+    operador: num(v.operador),
+    tecnico: num(v.tecnico),
+    ayudante: num(v.ayudante),
+  };
+}
+
+function normalizeTotales(v = {}) {
+  return {
+    hh: toNumberOrNull(v.hh) ?? 0,
+    aguaUtilizada: asString(v.aguaUtilizada),
+  };
+}
+
+function normalizeEquipoLavado(item = {}) {
+  const fecha = toDateOrNull(item.fecha);
+  return {
+    numero: toNumberOrNull(item.numero) ?? null,
+    tipo: asString(item.tipo),
+    equipos: toNumberOrNull(item.equipos) ?? 0,
+    lavados: toNumberOrNull(item.lavados) ?? 0,
+    fecha: fecha || undefined,
+    numeroPT: toNumberOrNull(item.numeroPT) ?? null,
+    jefeFaena: asString(item.jefeFaena),
+    numeroSerie: toNumberOrNull(item.numeroSerie) ?? null,
+    equipo: asString(item.equipo),
+    H: toNumberOrNull(item.H) ?? null,
+    C: asString(item.C),
+    vV: asString(item.vV),
+    P: asString(item.P),
+    camion: asString(item.camion),
+    metodo: asString(item.metodo),
+    lavada: Boolean(item.lavada),
+    observaciones: asString(item.observaciones),
+  };
+}
+
+function normalizeEquiposLavados(arr) {
+  if (!Array.isArray(arr)) return [];
+  return arr
+    .map((x) => (x && typeof x === 'object' ? normalizeEquipoLavado(x) : null))
     .filter(Boolean);
 }
 
-function normalizeUbicacion(v = {}) {
-  return {
-    direccion: (v.direccion ?? '').toString().trim(),
-    comuna: (v.comuna ?? '').toString().trim(),
-    latitude: (v.latitude ?? '').toString().trim(),
-  };
-}
-
-function normalizeCliente(v = {}) {
-  return {
-    nombre: (v.nombre ?? '').toString().trim(),
-    correo: (v.correo ?? '').toString().trim(),
-    rut: (v.rut ?? '').toString().trim(),
-  };
+function normalizeImagenes(arr) {
+  if (!Array.isArray(arr)) return [];
+  return arr
+    .map((x) => asString(x))
+    .filter((s) => s.length > 0);
 }
 
 function normalizeFirma(v = {}) {
-  const fecha = toDateOrNull(v.fecha);
   return {
-    nombre: (v.nombre ?? '').toString().trim(),
-    rut: (v.rut ?? '').toString().trim(),
-    fecha: fecha || undefined,
+    jefeBrigada: asString(v.jefeBrigada),
   };
 }
 
-function buildUpdate(body) {
-  const editablePaths = getEditablePaths(Informe);
-  const out = {};
-  for (const [k, v] of Object.entries(body || {})) {
-    if (!isEditableKey(k, editablePaths)) continue;
+/* ---------- whitelisting + dispatch ---------- */
 
-    if (k === 'materialesUtilizados') {
-      out[k] = normalizeMateriales(v);
-      continue;
+function buildUpdate(body) {
+  const out = {};
+  const src = body || {};
+
+  for (const [k, v] of Object.entries(src)) {
+    if (!ALLOWED_ROOT_KEYS.has(k) || NON_EDITABLE.has(k)) continue;
+
+    switch (k) {
+      case 'jefeFaena':
+      case 'encargado':
+      case 'instalacion':
+      case 'tipoIntervencion':
+      case 'observacionGeneral':
+        out[k] = asString(v);
+        break;
+
+      case 'fechaInicio': {
+        const d = toDateOrNull(v);
+        if (d) out.fechaInicio = d; // normalmente no se envía; el modelo pone default
+        break;
+      }
+      case 'fechaTermino': {
+        const d = toDateOrNull(v);
+        if (d) out.fechaTermino = d;
+        break;
+      }
+
+      case 'controles':
+        if (v && typeof v === 'object') out.controles = normalizeControles(v);
+        break;
+
+      case 'programa':
+        if (v && typeof v === 'object') out.programa = normalizePrograma(v);
+        break;
+
+      case 'controlAgua':
+        if (v && typeof v === 'object') out.controlAgua = normalizeControlAgua(v);
+        break;
+
+      case 'personal':
+        if (v && typeof v === 'object') out.personal = normalizePersonal(v);
+        break;
+
+      case 'totales':
+        if (v && typeof v === 'object') out.totales = normalizeTotales(v);
+        break;
+
+      case 'equiposLavados':
+        out.equiposLavados = normalizeEquiposLavados(v);
+        break;
+
+      case 'imagenes':
+        out.imagenes = normalizeImagenes(v);
+        break;
+
+      case 'firma':
+        if (v && typeof v === 'object') out.firma = normalizeFirma(v);
+        break;
+
+      default:
+        // ignorar claves no reconocidas
+        break;
     }
-    if (k === 'ubicacion' && v && typeof v === 'object') {
-      out[k] = normalizeUbicacion(v);
-      continue;
-    }
-    if (k === 'cliente' && v && typeof v === 'object') {
-      out[k] = normalizeCliente(v);
-      continue;
-    }
-    if (k === 'firmaTecnico' && v && typeof v === 'object') {
-      out[k] = normalizeFirma(v);
-      continue;
-    }
-    if (
-      ['fechaActividad', 'fechaAprobacion', 'fechaEnvio', 'fechaFacturacion', 'fecha'].includes(k)
-    ) {
-      const d = toDateOrNull(v);
-      if (d) out[k] = d;
-      continue;
-    }
-    out[k] = v;
   }
   return out;
 }
 
-/* --------- RUTAS --------- */
+/* ===================== RUTAS ===================== */
 
 // Crear
 router.post('/', verificarToken, async (req, res) => {
   try {
-    const body = req.body || {};
-    const payload = buildUpdate(body);
+    const payload = buildUpdate(req.body);
 
-    // seguridad rol: si no eres admin, ignoramos técnico entrante
-    if (req.usuario?.rol !== 'admin') delete payload.tecnico;
-    if (!payload.tecnico) payload.tecnico = req.usuario.id;
-
-    // Validación de negocio
-    const ubic = payload.ubicacion || {};
-    const mats = normalizeMateriales(payload.materialesUtilizados);
-    payload.materialesUtilizados = mats;
-
-    if (
-      !payload.tipoAislador ||
-      !ubic.direccion || !ubic.comuna ||
-      !Array.isArray(mats) || mats.length === 0
-    ) {
-      return res.status(400).json({ mensaje: 'Faltan campos obligatorios' });
+    // Reglas mínimas de negocio
+    if (!payload.instalacion || !payload.instalacion.length) {
+      return res.status(400).json({ mensaje: 'Instalacion es obligatoria' });
     }
 
+    // fechaInicio por defecto lo pone el esquema; si vino bien formateada, se respeta.
     const docNuevo = await Informe.create(payload);
-
-    const doc = await Informe.findById(docNuevo._id)
-      .populate('tecnico', 'nombre correo')
-      .lean();
+    const doc = await Informe.findById(docNuevo._id).lean();
 
     res.status(201).json({ mensaje: 'Informe creado correctamente', informe: doc });
   } catch (error) {
@@ -147,36 +239,27 @@ router.post('/', verificarToken, async (req, res) => {
 });
 
 // Listar (admin)
-router.get('/', verificarToken, esAdmin, async (req, res) => {
+router.get('/', verificarToken, esAdmin, async (_req, res) => {
   try {
-    const informes = await Informe.find()
-      .populate('tecnico', 'nombre correo')
-      .sort({ createdAt: -1 })
-      .lean();
+    const informes = await Informe.find().sort({ createdAt: -1 }).lean();
     res.json({ informes });
   } catch (error) {
     res.status(500).json({ mensaje: 'Error al obtener los informes', error: error.message });
   }
 });
 
-// Mis informes
-router.get('/mios', verificarToken, async (req, res) => {
-  try {
-    const informes = await Informe.find({ tecnico: req.usuario.id })
-      .sort({ createdAt: -1 })
-      .lean();
-    res.json({ informes });
-  } catch (error) {
-    res.status(500).json({ mensaje: 'Error al obtener los informes', error: error.message });
-  }
+// Mis informes (deshabilitado: el nuevo esquema no guarda autor/tecnico)
+router.get('/mios', verificarToken, async (_req, res) => {
+  return res.status(410).json({
+    mensaje:
+      'Ruta no disponible: el esquema actual no almacena el autor del informe. Agrega `creadoPor` al modelo para reactivarla.',
+  });
 });
 
-// Obtener por ID (útil para el modal si lo necesitas)
+// Obtener por ID
 router.get('/:id', verificarToken, async (req, res) => {
   try {
-    const inf = await Informe.findById(req.params.id)
-      .populate('tecnico', 'nombre correo')
-      .lean();
+    const inf = await Informe.findById(req.params.id).lean();
     if (!inf) return res.status(404).json({ mensaje: 'Informe no encontrado' });
     res.json({ informe: inf });
   } catch (error) {
@@ -188,10 +271,6 @@ router.get('/:id', verificarToken, async (req, res) => {
 router.patch('/:id', verificarToken, esAdmin, async (req, res) => {
   try {
     const update = buildUpdate(req.body);
-
-    if ('materialesUtilizados' in update) {
-      update.materialesUtilizados = normalizeMateriales(update.materialesUtilizados);
-    }
     if (!Object.keys(update).length) {
       return res.status(400).json({ mensaje: 'No hay cambios válidos para aplicar' });
     }
@@ -200,7 +279,7 @@ router.patch('/:id', verificarToken, esAdmin, async (req, res) => {
       req.params.id,
       { $set: update },
       { new: true, runValidators: true }
-    ).populate('tecnico', 'nombre correo');
+    );
 
     if (!informeActualizado) {
       return res.status(404).json({ mensaje: 'Informe no encontrado' });

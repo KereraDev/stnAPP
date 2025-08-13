@@ -27,6 +27,7 @@
   --radius-md: 10px;
   --radius-lg: 12px;
   --radius-xl: 16px;
+  
 }
 
 /* ================================
@@ -78,7 +79,6 @@
 ================================== */
 .toolbar {
   display: flex;
-  gap: 12px;
   align-items: center;
   flex-wrap: wrap;
   background: var(--surface-color);
@@ -88,7 +88,6 @@
   box-shadow: var(--shadow-sm);
 }
 .search-input {
-  flex: 1 1 340px;
   min-width: 260px;
   border: 1.5px solid var(--border-color);
   border-radius: var(--radius-lg);
@@ -131,8 +130,14 @@
 .btn-small { padding: 0.4rem 0.7rem; border-radius: var(--radius-md); font-size: 0.85rem; }
 .btn-ghost { background: transparent; border-color: var(--border-color); }
 
-.export-buttons { display: inline-flex; gap: 8px; align-items: center; }
-.informes-table .btn-small { white-space: nowrap; }
+/* versiones en columna para la tabla */
+.export-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+}
+.export-buttons .btn-small { width: 100%; }
 
 /* ================================
    ⚠️ MENSAJE DE ERROR
@@ -205,31 +210,16 @@
 .cell-ellipsis { overflow: hidden; text-overflow: ellipsis; }
 .informes-table tbody tr { height: 58px; }
 
-/* Anchos de columnas */
-.col-tecnico   { width: 16%; }
-.col-cliente   { width: 16%; }
-.col-estado    { width: 12%; }
-.col-aislador  { width: 18%; }
-.col-ubicacion { width: 22%; }
-.col-exportar  { width: 10%; text-align: left; }
-.col-creado    { width: 12%; }
+/* Anchos de columnas (ajustados) */
+.col-ubicacion { width: 24%; }      /* Instalación */
+.col-tecnico   { width: 16%; }      /* Jefe de faena / Encargado */
+.col-aislador  { width: 18%; }      /* Tipo intervención */
+.col-mes       { width: 12%; }      /* Mes prog. */
+.col-exportar  { width: 12%; text-align: left; }
 
-/* Badges de estado */
-.badge {
-  display: inline-block;
-  padding: .25rem .55rem;
-  border-radius: 999px;
-  font-weight: 700;
-  font-size: .78rem;
-  letter-spacing: .02em;
-  color: #fff;
-  box-shadow: var(--shadow-sm);
-  text-transform: capitalize;
-}
-.badge--pendiente { background: #64748b; }
-.badge--rechazado { background: #dc2626; }
-.badge--aprobado  { background: #16a34a; }
-.badge--enviado   { background: #2563eb; }
+/* Asegura que cualquier “Creado” que quede no se muestre */
+.informes-table thead th.col-creado,
+.informes-table tbody td.col-creado { display: none !important; }
 
 /* Ocultar columnas en pantallas medianas/chicas */
 .hide-md { display: table-cell; }
@@ -251,15 +241,15 @@
 }
 .modal-informe {
   background: var(--surface-color);
-  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-xl);
   max-width: 980px;
   width: 100%;
   max-height: 92vh;
   overflow-y: auto;
   position: relative;
-  border: 1.5px solid var(--border-color);
   animation: slideUp 0.24s ease-out;
+  /* evita saltos al aparecer el scroll */
+  scrollbar-gutter: stable both-edges;
 }
 .modal-close {
   position: absolute;
@@ -302,6 +292,9 @@
   flex-wrap: wrap;
   gap: 10px;
   padding: 0.9rem 1.5rem 0.4rem;
+  justify-content: center;   /* centra horizontal */
+  align-items: center;       /* centra vertical */
+  align-content: center;
 }
 
 /* ================================
@@ -323,6 +316,8 @@
 }
 .form-grid input[type="text"],
 .form-grid input[type="email"],
+.form-grid input[type="number"],
+.form-grid input[type="month"],
 .form-grid input[type="datetime-local"],
 .form-grid input:not([type]),
 .form-grid textarea,
@@ -355,7 +350,7 @@
 }
 
 /* ================================
-   🧰 FIELDSETS (fechas, firma, etc.)
+   🧰 FIELDSETS
 ================================== */
 .fieldset {
   border: 1.5px solid var(--border-color);
@@ -372,38 +367,24 @@
 .fieldset .form-grid { margin: 6px 0 0; }
 
 /* ================================
-   🧱 FILAS DINÁMICAS (materiales / imágenes)
+   🧱 FILAS DINÁMICAS (equipos / imágenes)
 ================================== */
 .material-row {
   display: grid;
-  grid-template-columns: 1fr 140px 140px auto;
-  gap: 10px;
+  grid-template-columns: repeat(2, 1fr);
+  column-gap: 16px;
+  row-gap: 10px;
+  justify-items: stretch;
   align-items: center;
   margin-bottom: 10px;
 }
+.material-row > * { min-width: 0; }
 .material-row .btn-danger { justify-self: end; }
 
-/* Filas para URLs de imágenes (usa mismo layout) */
-.fieldset .material-row input[placeholder="https://..."] {
-  grid-column: 1 / span 3;
+/* Inputs de imágenes: ocupar casi toda la fila */
+.fieldset .material-row input[placeholder^="URL imagen"] {
+  grid-column: 1 / -2;
 }
-
-/* ================================
-   📎 ENLACES DE IMAGEN (vista antigua)
-================================== */
-.rubius { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.rubius a {
-  background: var(--primary-color);
-  color: white;
-  text-decoration: none;
-  padding: 0.5rem 1rem;
-  border-radius: var(--radius-md);
-  font-size: 0.875rem;
-  font-weight: 600;
-  transition: box-shadow 0.2s, transform 0.2s;
-  box-shadow: var(--shadow-sm);
-}
-.rubius a:hover { transform: scale(1.03); box-shadow: var(--shadow-md); }
 
 /* ================================
    🔄 CARGA
@@ -440,7 +421,6 @@
 .modal-close:focus,
 .btn:focus,
 .search-input:focus,
-.rubius a:focus,
 .form-grid input:focus,
 .form-grid select:focus,
 .form-grid textarea:focus {
@@ -461,16 +441,12 @@
 ================================== */
 @media (max-width: 1080px) {
   .form-grid { grid-template-columns: 1fr; }
-  .material-row { grid-template-columns: 1fr 1fr; }
-  .fieldset .material-row input[placeholder="https://..."] { grid-column: 1 / -1; }
-  .col-ubicacion { width: 26%; }
+  .material-row { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 900px) {
   .hide-md { display: none; }
   .col-tecnico { width: 22%; }
-  .col-cliente { width: 22%; }
-  .col-aislador { width: 20%; }
-  .col-estado { width: 16%; }
+  .col-aislador { width: 22%; }
   .col-exportar { width: auto; }
 }
 @media (max-width: 640px) {
@@ -500,15 +476,23 @@
   to   { opacity: 1; transform: translateX(0); }
 }
 
-
-.export-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;            /* espacio vertical entre botones */
-  align-items: stretch;
-}
-
-.export-buttons .btn-small {
+/* ================================
+   📏 Inputs full-width en grid
+================================== */
+.form-grid :is(input, select, textarea):not([type="checkbox"], [type="radio"]),
+.material-row :is(input, select, textarea):not([type="checkbox"], [type="radio"]) {
+  width: 100% !important;
   display: block;
-  width: 100%;         /* que ocupen todo el ancho de la celda */
+  box-sizing: border-box;
+}
+.full-width { grid-column: 1 / -1 !important; }
+.form-grid :is(button, .btn),
+.material-row :is(button, .btn) {
+  width: auto !important;
+  justify-self: start;
+}
+.form-grid label,
+.material-row label {
+  width: 100%;
+  min-width: 0;
 }

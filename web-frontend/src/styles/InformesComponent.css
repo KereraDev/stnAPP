@@ -1,372 +1,232 @@
-/* ================================
-   🎨 Variables de tema
-================================== */
-:root {
-  --primary: #185dc8;
-  --primary-700: #0f48a0;
-  --text-main: #0f265c;
-  --text-secondary: #526281;
-  --muted: #8fa2c2;
-
-  --bg: #f6f9ff;
-  --surface: #ffffff;
-  --border: #d7e4ff;
-
-  --danger: #d12e2e;
-  --success: #2e7d32;
-
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-
-  --shadow-sm: 0 2px 8px rgba(24, 93, 200, .08);
-  --shadow-md: 0 4px 16px rgba(24, 93, 200, .12);
-  --shadow-lg: 0 10px 28px rgba(24, 93, 200, .16);
-}
-
-/* ================================
-   🧱 Layout general
-================================== */
-.informes-containerComponent {
-  max-width: 1100px;
+/* ====== Scoped a InformesComponent (prefijo ic-) ====== */
+.ic-wrap {
+  max-width: 1180px;
   margin: 0 auto;
-  padding: 24px;
-  min-height: 100vh;
-  background: var(--bg);
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
-  color: var(--text-main);
+  padding: 1.25rem;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: #334155;
 }
 
-.informes-full-height {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+/* tokens locales */
+.ic-wrap {
+  --ic-primary: #185dc8;
+  --ic-primary-700: #0f4db0;
+  --ic-text: #0e3f92;
+  --ic-muted: #64748b;
+  --ic-border: #cfe0ff;
+  --ic-divider: #eaf0ff;
+  --ic-soft: #fcfdff;
+  --ic-shadow: 0 2px 12px rgba(24,93,200,.08);
 }
 
-/* ================================
-   🧭 Cabecera
-================================== */
-.informes-container {
+.ic-header {
   display: flex;
-  align-items: center;
   gap: 14px;
+  align-items: center;
+  margin-bottom: 8px;
 }
+.ic-header-icon { display: grid; place-items: center; }
+.ic-title { margin: 0; font-size: 1.8rem; color: var(--ic-primary); font-weight: 800; }
+.ic-subtitle { margin: 2px 0 0; color: #475569; }
 
-.informes-header-icon {
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #eaf1ff, #ffffff);
-  box-shadow: var(--shadow-sm);
+.ic-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: .75rem 1rem;
+  border-radius: 10px;
+  font-weight: 600;
 }
-
-.informes-title {
-  font-size: 1.75rem;
-  font-weight: 800;
-  color: var(--primary);
-  margin: 0;
-}
-
-.informes-subtitle {
-  margin-top: 2px;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-/* ================================
-   ⚠️ Error / Vacío
-================================== */
-.informes-error {
-  background: #fff3f3;
-  border: 1px solid #ffd2d2;
-  color: #a32222;
-  padding: 12px 14px;
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-}
-
-.no-informes {
-  background: var(--surface);
-  border: 2px dashed var(--border);
-  color: var(--text-secondary);
-  padding: 28px 20px;
-  border-radius: var(--radius-lg);
+.ic-empty {
+  border: 2px dashed var(--ic-border);
+  border-radius: 14px;
+  padding: 2.2rem 1.2rem;
   text-align: center;
-  box-shadow: var(--shadow-sm);
+  color: #64748b;
 }
 
-/* ================================
-   📊 Tabla
-================================== */
-.informes-table {
+/* ====== Tabla listado ====== */
+.ic-table {
   width: 100%;
-  border-collapse: collapse;
-  background: var(--surface);
-  border-radius: var(--radius-lg);
+  border-spacing: 0;
+  background: #fff;
+  border: 1px solid var(--ic-border);
+  border-radius: 14px;
   overflow: hidden;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--ic-shadow);
 }
-
-.informes-table thead {
-  background: var(--primary);
-}
-
-.informes-table thead th {
-  color: #fff;
-  font-weight: 700;
+.ic-table thead { background: var(--ic-primary); color: #fff; }
+.ic-table th {
   text-align: left;
+  padding: .85rem 1rem;
+  font-size: .85rem;
   letter-spacing: .02em;
-  padding: 14px 16px;
-  font-size: .9rem;
 }
-
-.informes-table tbody tr {
-  border-bottom: 1px solid var(--border);
-  transition: background .15s ease, transform .15s ease, box-shadow .15s ease;
-  cursor: pointer;
-}
-
-.informes-table tbody tr:hover {
-  background: #f2f7ff;
-  transform: scale(1.002);
-  box-shadow: inset 0 0 0 1px #e3eeff;
-}
-
-.informes-table tbody td {
-  padding: 14px 16px;
+.ic-table td {
+  padding: .85rem 1rem;
   vertical-align: middle;
-  color: var(--text-main);
+  color: var(--ic-text);
   font-weight: 500;
+  border-top: 1px solid #e6f0ff;
 }
+.ic-row:hover { background: #f5faff; cursor: pointer; }
 
-.informes-table tbody td:first-child {
-  color: var(--primary);
-  font-weight: 700;
-}
+.ic-table-fixed { table-layout: fixed; }
+.ic-cell-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* ================================
-   🪟 Modal
-================================== */
-.modal-informe-bg {
-  position: fixed;
-  inset: 0;
-  background: rgba(8, 24, 64, .46);
-  backdrop-filter: blur(4px);
+.ic-col-inst   { width: 28%; }
+.ic-col-person { width: 18%; }
+.ic-col-tipo   { width: 20%; }
+.ic-col-mes    { width: 12%; }
+
+/* ====== Modal ====== */
+.ic-modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(2,6,23,.55);
+  backdrop-filter: blur(6px);
   display: grid;
   place-items: center;
-  padding: 16px;
   z-index: 1000;
-  animation: fadeIn .2s ease-out;
+  padding: 1rem;
 }
-
-.modal-informe {
-  width: min(880px, 100%);
-  max-height: 90vh;
-  overflow: auto;
-  background: var(--surface);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  border: 1px solid var(--border);
-  animation: slideUp .22s ease-out;
+.ic-modal {
+  background: #fff;
+  width: 100%;
+  max-width: 980px;
+  max-height: 92vh;
+  overflow-y: auto;
+  border: 1px solid var(--ic-border);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(24,93,200,.18);
   position: relative;
 }
-
-.modal-close {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  width: 36px;
-  height: 36px;
-  border-radius: 999px;
-  border: none;
-  background: var(--danger);
-  color: #fff;
-  font-size: 20px;
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-  box-shadow: var(--shadow-sm);
-  transition: transform .12s ease, background .12s ease;
-}
-
-.modal-close:hover { transform: scale(1.06); }
-
-.modal-informe h3 {
+.ic-modal h3 {
   margin: 0;
-  padding: 20px 22px 14px;
-  font-size: 1.35rem;
-  font-weight: 800;
-  color: var(--primary);
-  border-bottom: 1px solid var(--border);
+  padding: 1rem 1.25rem .75rem;
+  font-size: 1.4rem;
+  color: var(--ic-primary);
+  border-bottom: 1px solid var(--ic-divider);
 }
-
-.modal-informe-content {
-  padding: 18px 22px 22px;
+.ic-modal-close {
+  position: absolute;
+  top: .7rem; right: .7rem;
+  width: 36px; height: 36px;
+  border: none; border-radius: 50%;
+  background: #dc2626; color: #fff;
+  font-size: 1.1rem; cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0,0,0,.15);
 }
+.ic-modal-close:hover { background: #b91c1c; }
 
-/* ================================
-   🧾 Tabla interna del modal
-================================== */
-.modal-informe-table {
+/* Secciones dentro del modal con separadores */
+.ic-section { padding: .9rem 1.25rem; }
+.ic-section + .ic-section { border-top: 1px solid var(--ic-divider); }
+.ic-section h4 { margin: 0 0 .6rem; color: var(--ic-text); }
+
+/* ====== NUEVO: tabla de detalle Campo/Valor con líneas entre filas ====== */
+.ic-detail {
   width: 100%;
-  border-collapse: separate;
+  border-collapse: collapse;             /* permite dibujar separador de fila a fila */
   border-spacing: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  background: var(--ic-soft);
+  border: 1px solid var(--ic-divider);
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 6px 16px rgba(24,93,200,.06);
 }
-
-.modal-informe-table th {
-  width: 220px;
-  text-align: left;
-  background: linear-gradient(180deg, #f4f8ff, #eef4ff);
-  color: var(--text-main);
-  padding: 12px 14px;
-  font-weight: 700;
-  border-bottom: 1px solid var(--border);
+.ic-detail th,
+.ic-detail td {
+  padding: .7rem 0.9rem;
+  font-size: .95rem;
+  line-height: 1.35;
   vertical-align: top;
+  border-bottom: 1px dashed var(--ic-divider); /* ← separadores sutiles */
 }
+.ic-detail tr:last-child th,
+.ic-detail tr:last-child td { border-bottom: none; }
 
-.modal-informe-table td {
-  padding: 12px 14px;
-  color: var(--text-secondary);
-  border-bottom: 1px solid var(--border);
-  line-height: 1.5;
-  vertical-align: top;
-}
-
-.modal-informe-table tr:last-child th,
-.modal-informe-table tr:last-child td {
-  border-bottom: 0;
-}
-
-/* ================================
-   ⬇️ Botones (PDF / Excel) dentro del modal
-   (tu JSX no usa clases, así que estilizamos
-   los <button> directamente en el contenido)
-================================== */
-.modal-informe-content button {
-  appearance: none;
-  border: none;
-  border-radius: 10px;
-  padding: 10px 16px;
-  margin: 6px 6px 0 0;
+.ic-detail th {
+  width: 32%;
+  color: var(--ic-muted);
   font-weight: 700;
-  letter-spacing: .02em;
-  cursor: pointer;
-  box-shadow: var(--shadow-sm);
-  transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+  background: #fff;                      /* contraste leve */
+}
+.ic-detail td {
+  color: #0f172a;
+  background: #fff;
 }
 
-.modal-informe-content button:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+/* versión cebrada opcional */
+.ic-detail--striped tbody tr:nth-child(odd) td { background: #fbfdff; }
+.ic-detail--striped tbody tr:nth-child(odd) th { background: #fbfdff; }
+
+/* comprimido en pantallas pequeñas */
+@media (max-width: 640px) {
+  .ic-detail th, .ic-detail td { padding: .6rem .7rem; font-size: .9rem; }
 }
 
-.modal-informe-content button:active {
-  transform: translateY(0);
-  box-shadow: var(--shadow-sm);
+/* ====== Grids y tarjetas dentro del modal ====== */
+.ic-grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 14px;
+}
+.ic-full { grid-column: 1 / -1; }
+
+.ic-equipos { display: grid; gap: 12px; }
+.ic-equipo {
+  border: 1px solid var(--ic-divider);
+  border-radius: 12px;
+  padding: .75rem .9rem;
+  background: var(--ic-soft);
+}
+.ic-equipo + .ic-equipo { border-top: 1px solid var(--ic-divider); }
+.ic-equipo-head {
+  font-weight: 800; color: var(--ic-primary); margin-bottom: .4rem;
+}
+.ic-observ { margin-top: .4rem; color: #334155; }
+
+/* enlaces de imagen */
+.ic-images { display: flex; flex-wrap: wrap; gap: .5rem; }
+.ic-img-link {
+  background: var(--ic-primary); color: #fff; text-decoration: none;
+  padding: .4rem .7rem; border-radius: 10px; font-weight: 600;
 }
 
-/* primer botón (PDF) y segundo (Excel) por orden */
-.modal-informe-content button:nth-of-type(1) {
-  background: var(--danger);
-  color: #fff;
-}
-.modal-informe-content button:nth-of-type(1):hover {
-  filter: brightness(.95);
-}
-
-.modal-informe-content button:nth-of-type(2) {
-  background: var(--success);
-  color: #fff;
-}
-.modal-informe-content button:nth-of-type(2):hover {
-  filter: brightness(.96);
-}
-
-/* ================================
-   🔗 Chips para imágenes (si llegaran a usarse)
-================================== */
-.rubius {
+/* Acciones del modal */
+.ic-modal-actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  justify-content: center;
+  gap: 10px;
+  padding: .9rem 1.25rem 1.1rem;
+  border-top: 1px solid var(--ic-divider);
+  background: #fff;
 }
-.rubius a {
-  display: inline-block;
-  background: #eef4ff;
-  color: var(--primary);
-  border: 1px solid var(--border);
-  padding: 6px 10px;
-  border-radius: 999px;
-  text-decoration: none;
+.ic-btn {
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: .55rem .9rem;
   font-weight: 700;
-  font-size: .85rem;
-  transition: background .12s ease, transform .12s ease;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(24,93,200,.10);
 }
-.rubius a:hover {
-  background: #e6efff;
-  transform: translateY(-1px);
-}
+.ic-btn-danger  { background: #dc2626; color: #fff; }
+.ic-btn-success { background: #22c55e; color: #fff; }
+.ic-btn:hover { transform: translateY(-1px); }
+.ic-btn:active { transform: translateY(0); }
 
-/* ================================
-   🌐 Scrollbar modal
-================================== */
-.modal-informe::-webkit-scrollbar { width: 10px; }
-.modal-informe::-webkit-scrollbar-track { background: #f1f5ff; }
-.modal-informe::-webkit-scrollbar-thumb {
-  background: #c7d7fb;
-  border-radius: 8px;
+/* ====== Responsive ====== */
+@media (max-width: 980px) {
+  .ic-col-person { width: 20%; }
+  .ic-col-tipo   { width: 20%; }
 }
-.modal-informe::-webkit-scrollbar-thumb:hover { background: #b4c7f9; }
-
-/* ================================
-   🧠 Accesibilidad
-================================== */
-.informes-table tbody tr:focus,
-.modal-close:focus,
-.modal-informe-content button:focus,
-.rubius a:focus {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
+@media (max-width: 820px) {
+  .ic-table { display: block; overflow-x: auto; white-space: nowrap; }
+  .ic-grid2 { grid-template-columns: 1fr; }
 }
-
-/* ================================
-   🎞️ Animaciones
-================================== */
-@keyframes fadeIn {
-  from { opacity: 0 }
-  to   { opacity: 1 }
-}
-@keyframes slideUp {
-  from { transform: translateY(8px); opacity: .96 }
-  to   { transform: translateY(0);   opacity: 1 }
-}
-
-/* ================================
-   📱 Responsive
-================================== */
-@media (max-width: 900px) {
-  .modal-informe-table th { width: 170px; }
-}
-
-@media (max-width: 740px) {
-  .informes-containerComponent { padding: 16px; }
-  .informes-title { font-size: 1.45rem; }
-  .informes-table thead th,
-  .informes-table tbody td { padding: 12px; }
-  .modal-informe { max-height: 92vh; }
-  .modal-informe h3 { padding: 16px; }
-  .modal-informe-content { padding: 16px; }
-  .modal-informe-table th { width: 130px; font-size: .9rem; }
-  .modal-informe-table td { font-size: .92rem; }
-}
-
-@media (max-width: 560px) {
-  .informes-table { display: block; overflow-x: auto; white-space: nowrap; }
-  .modal-informe-table { display: block; overflow-x: auto; }
+@media (max-width: 600px) {
+  .ic-title { font-size: 1.55rem; }
+  .ic-subtitle { font-size: .95rem; }
+  .ic-wrap { padding: .8rem; }
 }

@@ -1,93 +1,277 @@
-/* ========== CONTENEDOR GENERAL ========== */
-.dashboard-container {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 2rem;
-  min-height: 100vh;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+/* =========================================================
+   DashboardPage.css — Tema claro: fondo blanco + acentos vivos
+   Moderno, intuitivo, responsivo.
+========================================================= */
+
+/* --------- Paleta y tokens (solo LIGHT) --------- */
+:root {
+  --bg:           #ffffff;          /* fondo blanco */
+  --surface:      #ffffff;          /* tarjetas blancas */
+  --surface-alt:  #f7fbff;          /* muy sutil para decoraciones */
+  --border:       #e7eefc;          /* borde azul muy claro */
+  --border-strong:#cfe0ff;
+
+  --text:         #0f172a;          /* slate-900 */
+  --text-soft:    #475569;          /* slate-600 */
+  --muted:        #94a3b8;          /* slate-400 */
+
+  --primary:      #185dc8;          /* azul marca */
+  --primary-600:  #0f4db0;
+  --success:      #16a34a;
+  --warning:      #d97706;
+  --danger:       #e74c3c;
+  --info:         #2563eb;
+  --cyan:         #0ea5e9;
+
+  --ring:         rgba(24, 93, 200, 0.25);
+  --shadow-sm:    0 2px 10px rgba(24, 93, 200, .06);
+  --shadow-md:    0 8px 24px rgba(24, 93, 200, .10);
+  --shadow-lg:    0 16px 48px rgba(24, 93, 200, .12);
+
+  --radius:       14px;
+  --radius-lg:    18px;
+
+  --grid-stroke:  #e9eef7;          /* líneas de grilla claritas */
 }
 
-/* ========== MÉTRICAS ========== */
+/* --------- Reset local --------- */
+.dashboard-container * {
+  box-sizing: border-box;
+}
+
+/* --------- Contenedor general --------- */
+.dashboard-container {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 24px;
+  min-height: 100vh;
+  color: var(--text);
+  background:
+    radial-gradient(1000px 700px at 120% -10%, rgba(24,93,200,.06), transparent 60%),
+    radial-gradient(900px 600px at -20% 110%, rgba(14,165,233,.05), transparent 55%),
+    var(--bg);
+  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+/* --------- Alertas / errores --------- */
+.informes-error {
+  background: linear-gradient(180deg, #fff, #fff) padding-box,
+              linear-gradient(180deg, rgba(231,76,60,.35), rgba(231,76,60,.15)) border-box;
+  border: 1px solid transparent;
+  color: var(--danger);
+  padding: 10px 14px;
+  border-radius: 10px;
+}
+
+/* --------- Métricas (cards superiores) --------- */
 .dashboard-content {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 24px;
-  margin-bottom: 40px;
+  gap: 18px;
+  margin-bottom: 26px;
+}
+
+.dashboard-metric-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+.dashboard-metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-strong);
 }
 
 .dashboard-metric-card.horizontal {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
-  background: #fff;
-  border: 1px solid #dbeafe;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  gap: 14px;
+  padding: 16px 18px;
 }
 
-.dashboard-metric-card.horizontal:hover {
-  transform: scale(1.02);
-  box-shadow: 0 6px 24px rgba(24, 93, 200, 0.1);
-}
-
+/* Icono circular con fondo blanco y acentos suaves */
 .icon-box {
   width: 48px;
   height: 48px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  min-width: 48px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.6);
 }
 
-.icon-total    { background-color: #2563eb !important; }
-.icon-hoy      { background-color: #22c55e !important; }
-.icon-ultimo   { background-color: #f59e42 !important; }
-.icon-ubicacion { background-color: #000 !important; }
+/* Acentos coloridos por tipo (fondos sutiles) */
+.icon-total {
+  background:
+    linear-gradient(140deg, rgba(24,93,200,.10), rgba(24,93,200,.04)),
+    #fff;
+}
+.icon-ultimo {
+  background:
+    linear-gradient(140deg, rgba(37,99,235,.10), rgba(37,99,235,.04)),
+    #fff;
+}
+.icon-hoy {
+  background:
+    linear-gradient(140deg, rgba(34,197,94,.12), rgba(34,197,94,.04)),
+    #fff;
+}
+.icon-ubicacion {
+  background:
+    linear-gradient(140deg, rgba(14,165,233,.12), rgba(14,165,233,.04)),
+    #fff;
+}
+
+/* Color del ícono según variante */
+.icon-total .metric-icon { color: var(--primary); }
+.icon-ultimo .metric-icon { color: var(--info); }
+.icon-hoy .metric-icon { color: var(--success); }
+.icon-ubicacion .metric-icon { color: var(--cyan); }
 
 .metric-icon {
-  color: #fff;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
 }
 
 .metric-info {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  gap: 4px;
 }
 
 .metric-value {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #1f2937;
-  margin-bottom: 4px;
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  line-height: 1.1;
 }
 
 .metric-label {
-  font-size: 0.95rem;
-  color: #6b7280;
+  font-size: .92rem;
+  color: var(--text-soft);
 }
 
-/* ========== GRÁFICOS ========== */
+/* --------- Filas de gráficos --------- */
 .dashboard-graphics-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 24px;
-  margin-bottom: 40px;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  margin-bottom: 22px;
 }
 
+@media (min-width: 980px) {
+  .dashboard-graphics-row {
+    grid-template-columns: 1fr 1fr; /* dos columnas cuando hay espacio */
+  }
+}
+
+/* --------- Tarjeta de gráfico --------- */
 .dashboard-graphic-card {
-  background: var(--surface-color, #fff);
-  border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: var(--radius-lg, 12px);
-  box-shadow: var(--shadow-md, 0 2px 6px rgba(0,0,0,0.05));
-  padding: 24px;
-  text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 16px 6px 16px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow .18s ease, border-color .18s ease;
+  overflow: hidden;
+}
+
+.dashboard-graphic-card:hover {
+  box-shadow: var(--shadow-lg);
+  border-color: var(--border-strong);
 }
 
 .dashboard-graphic-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: 16px;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: .005em;
+  color: var(--text);
+  margin: 2px 4px 12px 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* --------- Recharts (afinado visual en tema claro) --------- */
+.recharts-wrapper {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: var(--grid-stroke) !important;
+  stroke-opacity: .9;
+}
+
+.recharts-default-tooltip {
+  border-radius: 10px !important;
+}
+
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: #fff !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  box-shadow: var(--shadow-md) !important;
+  color: var(--text) !important;
+}
+
+.recharts-legend-item-text {
+  fill: var(--text-soft) !important;
+  font-size: 12px !important;
+}
+
+.recharts-xAxis .recharts-cartesian-axis-tick text,
+.recharts-yAxis .recharts-cartesian-axis-tick text {
+  fill: var(--text-soft);
+  font-size: 12px;
+}
+
+/* --------- Accesibilidad (focus) --------- */
+.dashboard-metric-card:focus-within,
+.dashboard-graphic-card:focus-within {
+  outline: 2px solid transparent;
+  box-shadow: 0 0 0 4px var(--ring), var(--shadow-md);
+}
+
+/* --------- Utilidades --------- */
+.u-hidden { display: none !important; }
+.u-muted  { color: var(--muted); }
+
+/* --------- Compactación en móviles --------- */
+@media (max-width: 600px) {
+  .dashboard-container { padding: 16px; }
+  .dashboard-metric-card.horizontal {
+    padding: 14px;
+    gap: 12px;
+  }
+  .icon-box {
+    width: 44px; height: 44px; min-width: 44px; border-radius: 10px;
+  }
+  .metric-value { font-size: 1.28rem; }
+  .dashboard-graphic-card { padding: 14px 12px 6px 12px; }
+}
+
+/* --------- Modo bajo movimiento --------- */
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-metric-card,
+  .dashboard-graphic-card {
+    transition: none;
+  }
+}
+
+/* --------- Impresión --------- */
+@media print {
+  .dashboard-container {
+    background: #fff;
+    padding: 0;
+  }
+  .dashboard-metric-card,
+  .dashboard-graphic-card {
+    box-shadow: none;
+  }
 }

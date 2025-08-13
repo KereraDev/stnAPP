@@ -1,7 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar, Legend, Cell, PieChart, Pie
+  ResponsiveContainer,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  Cell,
+  XAxis,
+  YAxis,
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  LabelList,
+  AreaChart,
+  Area,
 } from 'recharts';
 
 import Header from '../components/Header';
@@ -10,101 +22,178 @@ import { fetchInformes } from '../services/fetchInformes';
 import { FileText, UtilityPole, Calendar, Check } from 'lucide-react';
 import '../styles/DashboardPage.css';
 
-const ESTADOS = ['pendiente', 'aprobado', 'rechazado', 'enviado'];
-const COLOR_ESTADO = {
-  pendiente: '#ffd600',
-  aprobado:  '#16a34a',
-  rechazado: '#e74c3c',
-  enviado:   '#2563eb'
+/* ================================
+   Utilidades
+================================== */
+const tt = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '');
+
+const toNum = (v) => {
+  if (v === 0) return 0;
+  if (!v) return 0;
+  if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
+  const m = String(v).replace(',', '.').match(/-?\d+(\.\d+)?/);
+  return m ? parseFloat(m[0]) : 0;
 };
 
-const tt = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+const dayKeyUTC = (dateLike) => {
+  if (!dateLike) return null;
+  const d = new Date(dateLike);
+  if (isNaN(d)) return null;
+  const k = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
+    .toISOString()
+    .slice(0, 10);
+  return k;
+};
 
+/* ================================
+   Constantes (roles y colores)
+================================== */
+const ROLE_META = [
+  { key: 'ayudante',       label: 'Ayudante',        color: '#ef4444' },
+  { key: 'jefeBrigada',    label: 'Jefe de brigada', color: '#f59e0b' },
+  { key: 'operador',       label: 'Operador',        color: '#10b981' },
+  { key: 'prevencionista', label: 'Prevencionista',  color: '#22c55e' },
+  { key: 'supervisor',     label: 'Supervisor',      color: '#3b82f6' },
+  { key: 'tecnico',        label: 'Técnico',         color: '#8b5cf6' },
+];
+
+/* ================================
+   Componente
+================================== */
 const DashboardPage = () => {
   const [informes, setInformes] = useState([]);
   const [error, setError] = useState('');
 
+  // campo fecha base por informe
+  const pickFechaBase = (inf) =>
+    inf?.fechaActividad || inf?.createdAt || inf?.fecha_actividad || null;
+
   useEffect(() => {
     const cached = localStorage.getItem('dashboard_informes');
     if (cached) {
-      try { setInformes(JSON.parse(cached)); } catch { localStorage.removeItem('dashboard_informes'); }
+      try {
+        setInformes(JSON.parse(cached));
+      } catch {
+        localStorage.removeItem('dashboard_informes');
+      }
     }
 
     fetchInformes()
       .then((data) => {
-        setInformes(Array.isArray(data) ? data : (data?.informes || []));
-        localStorage.setItem('dashboard_informes', JSON.stringify(Array.isArray(data) ? data : (data?.informes || [])));
+        const list = Array.isArray(data) ? data : data?.informes || [];
+        setInformes(list);
+        localStorage.setItem('dashboard_informes', JSON.stringify(list));
       })
-      .catch((err) => setError(err.message || 'Error al cargar'));
+      .catch((err) => setError(err?.message || 'Error al cargar'));
   }, []);
 
   const cantidad = informes.length;
 
-  // fechas (toma fechaActividad, luego createdAt, luego fecha_actividad legacy)
-  const pickFechaBase = (inf) => inf?.fechaActividad || inf?.createdAt || inf?.fecha_actividad || null;
+  // clave de "hoy" en UTC
+  const hoyKey = useMemo(() => dayKeyUTC(new Date()), []);
 
-  const hoy = new Date();
-  const hoyKey = new Date(Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())).toISOString().slice(0,10);
+  const informesHoy = useMemo(() => {
+    let count = 0;
+    for (const i of informes) {
+      const k = dayKeyUTC(pickFechaBase(i));
+      if (k && k === hoyKey) count++;
+    }
+    return count;
+  }, [informes, hoyKey]);
 
-  const informesHoy = informes.filter(i => {
-    const f = pickFechaBase(i);
-    if (!f) return false;
-    const d = new Date(f);
-    const key = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString().slice(0,10);
-    return key === hoyKey;
-  }).length;
+  const ultimoInforme = useMemo(() => {
+    let best = null;
+    for (const inf of informes) {
+      const f = pickFechaBase(inf);
+      if (!f) continue;
+      if (!best) {
+        best = inf;
+      } else {
+        const fb = pickFechaBase(best);
+        if (new Date(f) > new Date(fb)) best = inf;
+      }
+    }
+    return best;
+  }, [informes]);
 
-  const ultimoInforme = informes.reduce((acc, curr) => {
-    const fC = pickFechaBase(curr);
-    const fA = acc ? pickFechaBase(acc) : null;
-    if (!acc || (fC && new Date(fC) > new Date(fA))) return curr;
-    return acc;
-  }, null);
+  // ===== Línea: total por día =====
+  const dataLine = useMemo(() => {
+    const map = {};
+    for (const i of informes) {
+      const k = dayKeyUTC(pickFechaBase(i));
+      if (!k) continue;
+      map[k] = (map[k] || 0) + 1;
+    }
+    return Object.entries(map)
+      .map(([k, total]) => ({
+        fechaKey: k,
+        fecha: new Date(k).toLocaleDateString('es-CL'),
+        total,
+      }))
+      .sort((a, b) => new Date(a.fechaKey) - new Date(b.fechaKey));
+  }, [informes]);
 
-  const tiposAislador = new Set(informes.map(i => i?.tipoAislador || i?.tipo_aislador || '')).size;
+  // ===== Barras (vertical): estructuras lavadas por informe (Top 10) =====
+  const dataBarEstructuras = useMemo(() => {
+    return informes
+      .map((inf, idx) => ({
+        name: inf?.instalacion || `Informe ${idx + 1}`,
+        value: Number(inf?.programa?.estructurasLavadas) || 0,
+      }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 10);
+  }, [informes]);
 
-  // Ubicaciones (por comuna)
-  const comunas = [...new Set(informes.map(i => i?.ubicacion?.comuna || 'Sin comuna'))];
+  // ===== Barras (horizontal): personal involucrado total por rol =====
+  const dataPersonal = useMemo(() => {
+    return ROLE_META.map((r) => {
+      const total = informes.reduce(
+        (acc, inf) => acc + toNum(inf?.personal?.[r.key]),
+        0
+      );
+      return { role: r.label, value: total, color: r.color };
+    });
+  }, [informes]);
 
-  // Conteo por estado (normaliza a nuestros 4)
-  const estados = informes.reduce((acc, i) => {
-    const e = (i?.estado || 'pendiente').toLowerCase();
-    const key = ESTADOS.includes(e) ? e : 'pendiente';
-    acc[key] = (acc[key] || 0) + 1;
-    return acc;
-  }, {});
+  // ===== Métrica: consumo diario total =====
+  const consumoTotal = useMemo(() => {
+    return informes.reduce(
+      (acc, inf) => acc + toNum(inf?.controlAgua?.consumoDiario),
+      0
+    );
+  }, [informes]);
 
-  // Serie por fecha (clave ISO YYYY-MM-DD + label legible)
-  const mapCount = {};
-  informes.forEach(i => {
-    const f = pickFechaBase(i);
-    if (!f) return;
-    const d = new Date(f);
-    const key = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString().slice(0,10);
-    mapCount[key] = (mapCount[key] || 0) + 1;
-  });
-  const dataLine = Object.entries(mapCount)
-    .map(([key, total]) => ({
-      fechaKey: key,
-      fecha: new Date(key).toLocaleDateString('es-CL'),
-      total
-    }))
-    .sort((a, b) => new Date(a.fechaKey) - new Date(b.fechaKey));
-
-  // Barras por estado (en orden fijo)
-  const dataBar = ESTADOS.map(e => ({ estado: tt(e), key: e, cantidad: estados[e] || 0 }));
-
-  // Pie por comuna
-  const dataPie = comunas.map(nombre => ({
-    name: nombre,
-    value: informes.filter(i => (i?.ubicacion?.comuna || 'Sin comuna') === nombre).length
-  }));
+  // ===== Área: Consumo de agua por día (promedio) =====
+  const dataWater = useMemo(() => {
+    const map = {};
+    for (const inf of informes) {
+      const fecha = inf?.controlAgua?.fecha || pickFechaBase(inf);
+      const k = dayKeyUTC(fecha);
+      if (!k) continue;
+      const v = toNum(inf?.controlAgua?.consumoDiario);
+      if (!map[k]) map[k] = { sum: 0, count: 0 };
+      map[k].sum += v;
+      map[k].count += 1;
+    }
+    return Object.entries(map)
+      .map(([k, { sum, count }]) => ({
+        fechaKey: k,
+        fecha: new Date(k).toLocaleDateString('es-CL'),
+        promedio: count ? +(sum / count).toFixed(2) : 0,
+      }))
+      .sort((a, b) => new Date(a.fechaKey) - new Date(b.fechaKey));
+  }, [informes]);
 
   return (
     <BackgroundComponent header={<Header />}>
       <div className="dashboard-container">
-        {error && <p className="informes-error" style={{ marginBottom: 16 }}>{error}</p>}
+        {error && (
+          <p className="informes-error" style={{ marginBottom: 16 }}>
+            {error}
+          </p>
+        )}
 
+        {/* ===== Métricas ===== */}
         <div className="dashboard-content">
           <div className="dashboard-metric-card horizontal">
             <div className="icon-box icon-total">
@@ -132,7 +221,9 @@ const DashboardPage = () => {
             </div>
             <div className="metric-info">
               <div className="metric-value">
-                {ultimoInforme ? new Date(pickFechaBase(ultimoInforme)).toLocaleDateString('es-CL') : '-'}
+                {ultimoInforme
+                  ? new Date(pickFechaBase(ultimoInforme)).toLocaleDateString('es-CL')
+                  : '-'}
               </div>
               <div className="metric-label">Último informe</div>
             </div>
@@ -143,16 +234,18 @@ const DashboardPage = () => {
               <UtilityPole className="metric-icon" />
             </div>
             <div className="metric-info">
-              <div className="metric-value">{tiposAislador}</div>
-              <div className="metric-label">Tipos de aislador</div>
+              <div className="metric-value">{consumoTotal.toFixed(2)}</div>
+              <div className="metric-label">Consumo diario de agua (total)</div>
             </div>
           </div>
         </div>
 
+        {/* ===== Fila 1 de gráficos ===== */}
         <div className="dashboard-graphics-row">
+          {/* Línea: informes por día */}
           <div className="dashboard-graphic-card">
             <h3 className="dashboard-graphic-title">Total de informes por día</h3>
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width="100%" height={240}>
               <LineChart data={dataLine} margin={{ top: 16, right: 24, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="fecha" tick={{ fontSize: 12 }} />
@@ -170,47 +263,57 @@ const DashboardPage = () => {
             </ResponsiveContainer>
           </div>
 
+          {/* Barras horizontales: personal por rol */}
           <div className="dashboard-graphic-card">
-            <h3 className="dashboard-graphic-title">Informes por estado</h3>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={dataBar} margin={{ top: 16, right: 24, left: 0, bottom: 0 }}>
+            <h3 className="dashboard-graphic-title">Personal involucrado (total por rol)</h3>
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart
+                data={dataPersonal}
+                layout="vertical"
+                margin={{ top: 12, right: 24, left: 24, bottom: 12 }}
+                barSize={20}
+              >
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="estado" tick={{ fontSize: 12 }} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Bar dataKey="cantidad" radius={[8, 8, 0, 0]} label={{ position: 'top', fontSize: 13 }}>
-                  {dataBar.map((entry, index) => (
-                    <Cell key={`bar-${index}`} fill={COLOR_ESTADO[entry.key]} />
+                <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12 }} />
+                <YAxis type="category" dataKey="role" width={140} tick={{ fontSize: 12 }} />
+                <Tooltip formatter={(v) => [`${v}`, 'personas']} />
+                <Legend />
+                <Bar dataKey="value" name="personas" radius={[0, 8, 8, 0]}>
+                  {dataPersonal.map((entry, idx) => (
+                    <Cell key={`cell-role-${idx}`} fill={entry.color} />
                   ))}
+                  <LabelList dataKey="value" position="right" fontSize={12} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
+        </div>
 
-          <div className="dashboard-graphic-card">
-            <h3 className="dashboard-graphic-title">Distribución por comuna</h3>
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart>
-                <Pie
-                  data={dataPie}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  fill="#185dc8"
-                  label
-                >
-                  {dataPie.map((entry, idx) => (
-                    <Cell
-                      key={`cell-ubic-${idx}`}
-                      fill={`hsl(${(idx * 360) / Math.max(1, dataPie.length)}, 70%, 55%)`}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
+        {/* ===== Fila 2 de gráficos ===== */}
+        <div className="dashboard-graphics-row">
+          <div className="dashboard-graphic-card" style={{ maxWidth: '640px' }}>
+            <h3 className="dashboard-graphic-title">Consumo de agua por día (promedio)</h3>
+            <ResponsiveContainer width="100%" height={240}>
+              <AreaChart data={dataWater} margin={{ top: 10, right: 24, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="aguaGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.8} />
+                    <stop offset="100%" stopColor="#0ea5e9" stopOpacity={0.1} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="fecha" tick={{ fontSize: 12 }} />
+                <YAxis allowDecimals tick={{ fontSize: 12 }} />
+                <Tooltip formatter={(v) => [`${v}`, 'm³ promedio']} />
+                <Area
+                  type="monotone"
+                  dataKey="promedio"
+                  name="m³ promedio"
+                  stroke="#0ea5e9"
+                  strokeWidth={3}
+                  fill="url(#aguaGrad)"
+                />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
