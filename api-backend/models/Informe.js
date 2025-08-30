@@ -61,6 +61,7 @@ const EquipoLavadoSchema = new mongoose.Schema({
   metodo:         { type: String, trim: true, default: '' },    // Método
   lavada:         { type: Boolean, default: false },            // Lavada (sí/no)
   observaciones:  { type: String, trim: true, default: '' },    // Observaciones
+  imagenes:       { type: [String], default: [] },              // Imágenes del equipo/lavado (Base64)
 }, { _id: false });
 
 const FirmaSchema = new mongoose.Schema({
@@ -69,13 +70,16 @@ const FirmaSchema = new mongoose.Schema({
 
 // ---------- Esquema principal ----------
 const informeSchema = new mongoose.Schema({
+  // Cliente (nuevo campo prioritario)
+  cliente: { type: String, trim: true, minlength: 2, default: '' },
+
   // Cabecera
   jefeFaena:        { type: String, trim: true, default: '' },  // Jefe de faena
   encargado:        { type: String, trim: true, default: '' },  // Encargado
   instalacion:      { type: String, trim: true, default: '' },  // Instalacion
 
   fechaInicio:      { type: Date, default: Date.now },          // al crear el informe
-  fechaTermino:     { type: Date, default: null },              // al terminar el informe (setear al cerrar)
+  fechaTermino:     { type: Date, default: null },              // al terminar el informe
 
   tipoIntervencion: { type: String, trim: true, default: '' },  // Tipo de intervencion
 
@@ -97,9 +101,6 @@ const informeSchema = new mongoose.Schema({
   // Equipos Lavados (lista)
   equiposLavados:   { type: [EquipoLavadoSchema], default: [] },
 
-  // Imágenes (URLs o rutas)
-  imagenes:         { type: [String], default: [] },
-
   // Observaciones Generales
   observacionGeneral: { type: String, trim: true, default: '' },
 
@@ -110,6 +111,7 @@ const informeSchema = new mongoose.Schema({
 });
 
 // Índices útiles
+informeSchema.index({ cliente: 1 });               // para filtros/agrupaciones por cliente
 informeSchema.index({ fechaInicio: -1 });
 informeSchema.index({ fechaTermino: -1 });
 informeSchema.index({ 'programa.mes': -1 });

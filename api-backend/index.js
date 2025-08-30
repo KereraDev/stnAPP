@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,6 +23,9 @@ const PORT = process.env.PORT || 3000;
 
 /* ---------------------- Middlewares ---------------------- */
 app.use(express.json({ limit: '1mb' }));
+
+// Servir archivos estáticos (imágenes subidas)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // CORS: permite dev y tu dominio de frontend en prod
 const allowedOrigins = [
@@ -60,6 +64,9 @@ app.use('/api/auth', rutasAuth);
 
 const rutasInformes = require('./routes/informes');
 app.use('/api/informes', rutasInformes);
+
+const rutasImagenes = require('./routes/imagenes');
+app.use('/api/imagenes', rutasImagenes);
 
 // Health check (útil para Render)
 app.get('/healthz', (req, res) => {

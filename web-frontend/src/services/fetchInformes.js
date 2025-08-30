@@ -1,9 +1,11 @@
 // src/services/fetchInformes.js
+import { getErrorMessage, ERROR_MESSAGES } from '../utils/errorMessages';
+
 const API_BASE = (import.meta.env.VITE_API_BASE || 'http://localhost:3000').replace(/\/+$/, '');
 
 export async function fetchInformes() {
   const token = localStorage.getItem('token');
-  if (!token) throw new Error('No hay token de autenticación');
+  if (!token) throw new Error(ERROR_MESSAGES.SESSION_EXPIRED);
 
   // rol desde el JWT (con fallback seguro)
   let rol = 'tecnico';
@@ -24,18 +26,21 @@ export async function fetchInformes() {
       headers: { Authorization: `Bearer ${token}` }
     });
   } catch {
-    throw new Error('No se pudo conectar con el servidor');
+    throw new Error(ERROR_MESSAGES.CONNECTION_ERROR);
   }
 
   let data;
   try {
     data = await res.json();
   } catch {
-    throw new Error('Respuesta inválida del servidor');
+    throw new Error(ERROR_MESSAGES.SERVER_ERROR);
   }
 
   if (!res.ok) {
-    throw new Error(data?.mensaje || data?.error || 'No se pudieron obtener los informes');
+    if (res.status === 401 || res.status === 403) {
+      throw new Error(ERROR_MESSAGES.SESSION_EXPIRED);
+    }
+    throw new Error(getErrorMessage(data?.mensaje || data?.error || 'load_error'));
   }
 
   // Soporta respuesta como arreglo o como objeto con "informes"

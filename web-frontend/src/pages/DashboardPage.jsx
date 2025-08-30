@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { getErrorMessage, ERROR_MESSAGES } from '../utils/errorMessages';
 import {
   ResponsiveContainer,
   CartesianGrid,
@@ -14,6 +15,8 @@ import {
   LabelList,
   AreaChart,
   Area,
+  PieChart,
+  Pie,
 } from 'recharts';
 
 import Header from '../components/Header';
@@ -45,6 +48,12 @@ const dayKeyUTC = (dateLike) => {
   return k;
 };
 
+const formatDateCL = (dateKey) => {
+  if (!dateKey) return '-';
+  const [year, month, day] = dateKey.split('-');
+  return `${day}-${month}-${year}`;
+};
+
 /* ================================
    Constantes (roles y colores)
 ================================== */
@@ -57,6 +66,12 @@ const ROLE_META = [
   { key: 'tecnico',        label: 'Técnico',         color: '#8b5cf6' },
 ];
 
+// Colores para el gráfico de torta
+const PIE_COLORS = [
+  '#185dc8', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', 
+  '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1'
+];
+
 /* ================================
    Componente
 ================================== */
@@ -66,7 +81,7 @@ const DashboardPage = () => {
 
   // campo fecha base por informe
   const pickFechaBase = (inf) =>
-    inf?.fechaActividad || inf?.createdAt || inf?.fecha_actividad || null;
+    inf?.fechaInicio || inf?.createdAt || inf?.fechaActividad || inf?.fecha_actividad || null;
 
   useEffect(() => {
     const cached = localStorage.getItem('dashboard_informes');
@@ -84,7 +99,7 @@ const DashboardPage = () => {
         setInformes(list);
         localStorage.setItem('dashboard_informes', JSON.stringify(list));
       })
-      .catch((err) => setError(err?.message || 'Error al cargar'));
+      .catch((err) => setError(getErrorMessage(err)));
   }, []);
 
   const cantidad = informes.length;
@@ -120,17 +135,21 @@ const DashboardPage = () => {
   const dataLine = useMemo(() => {
     const map = {};
     for (const i of informes) {
-      const k = dayKeyUTC(pickFechaBase(i));
+      const fechaBase = pickFechaBase(i);
+      const k = dayKeyUTC(fechaBase);
       if (!k) continue;
       map[k] = (map[k] || 0) + 1;
     }
-    return Object.entries(map)
+    
+    const result = Object.entries(map)
       .map(([k, total]) => ({
         fechaKey: k,
-        fecha: new Date(k).toLocaleDateString('es-CL'),
+        fecha: formatDateCL(k),
         total,
       }))
       .sort((a, b) => new Date(a.fechaKey) - new Date(b.fechaKey));
+    
+    return result;
   }, [informes]);
 
   // ===== Barras (vertical): estructuras lavadas por informe (Top 10) =====
@@ -167,7 +186,7 @@ const DashboardPage = () => {
   const dataWater = useMemo(() => {
     const map = {};
     for (const inf of informes) {
-      const fecha = inf?.controlAgua?.fecha || pickFechaBase(inf);
+      const fecha = pickFechaBase(inf); // Usar siempre fechaInicio como base
       const k = dayKeyUTC(fecha);
       if (!k) continue;
       const v = toNum(inf?.controlAgua?.consumoDiario);
@@ -178,10 +197,27 @@ const DashboardPage = () => {
     return Object.entries(map)
       .map(([k, { sum, count }]) => ({
         fechaKey: k,
-        fecha: new Date(k).toLocaleDateString('es-CL'),
+        fecha: formatDateCL(k),
         promedio: count ? +(sum / count).toFixed(2) : 0,
       }))
       .sort((a, b) => new Date(a.fechaKey) - new Date(b.fechaKey));
+  }, [informes]);
+
+  // ===== Torta: Informes por cliente =====
+  const dataPieClientes = useMemo(() => {
+    const map = {};
+    for (const inf of informes) {
+      const cliente = inf?.cliente?.trim() || 'Sin cliente';
+      map[cliente] = (map[cliente] || 0) + 1;
+    }
+    
+    return Object.entries(map)
+      .map(([cliente, cantidad], index) => ({
+        name: cliente,
+        value: cantidad,
+        color: PIE_COLORS[index % PIE_COLORS.length]
+      }))
+      .sort((a, b) => b.value - a.value); // Ordenar por cantidad descendente
   }, [informes]);
 
   return (
@@ -222,7 +258,7 @@ const DashboardPage = () => {
             <div className="metric-info">
               <div className="metric-value">
                 {ultimoInforme
-                  ? new Date(pickFechaBase(ultimoInforme)).toLocaleDateString('es-CL')
+                  ? formatDateCL(dayKeyUTC(pickFechaBase(ultimoInforme)))
                   : '-'}
               </div>
               <div className="metric-label">Último informe</div>
@@ -314,6 +350,76 @@ const DashboardPage = () => {
                   fill="url(#aguaGrad)"
                 />
               </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Torta: informes por cliente */}
+          <div className="dashboard-graphic-card">
+            <h3 className="dashboard-graphic-title">Informes por cliente</h3>
+            <ResponsiveContainer width="100%" height={240}>
+              <PieChart margin={{ top: 20, right: 60, left: 60, bottom: 20 }}>
+                <Pie
+                  data={dataPieClientes}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  innerRadius={0}
+                  paddingAngle={2}
+                  label={({ name, percent, cx, cy, midAngle, innerRadius, outerRadius }) => {
+                    const RADIAN = Math.PI / 180;
+                    
+                    // Porcentaje dentro del sector
+                    const radiusPercent = innerRadius + (outerRadius - innerRadius) * 0.5;
+                    const xPercent = cx + radiusPercent * Math.cos(-midAngle * RADIAN);
+                    const yPercent = cy + radiusPercent * Math.sin(-midAngle * RADIAN);
+                    
+                    // Nombre fuera del sector
+                    const radiusName = outerRadius + 15;
+                    const xName = cx + radiusName * Math.cos(-midAngle * RADIAN);
+                    const yName = cy + radiusName * Math.sin(-midAngle * RADIAN);
+                    
+                    return (
+                      <g>
+                        {/* Porcentaje dentro */}
+                        <text 
+                          x={xPercent} 
+                          y={yPercent} 
+                          fill="white" 
+                          textAnchor="middle" 
+                          dominantBaseline="central"
+                          fontSize="12"
+                          fontWeight="bold"
+                          stroke="black"
+                          strokeWidth="0.5"
+                          paintOrder="stroke fill"
+                        >
+                          {`${(percent * 100).toFixed(1)}%`}
+                        </text>
+                        {/* Nombre fuera */}
+                        <text 
+                          x={xName} 
+                          y={yName} 
+                          fill="#333" 
+                          textAnchor={xName > cx ? 'start' : 'end'} 
+                          dominantBaseline="central"
+                          fontSize="12"
+                          fontWeight="500"
+                        >
+                          {name}
+                        </text>
+                      </g>
+                    );
+                  }}
+                  labelLine={false}
+                >
+                  {dataPieClientes.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value, name) => [`${value} informes`, name]} />
+              </PieChart>
             </ResponsiveContainer>
           </div>
         </div>

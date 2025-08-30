@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import LoginForm from '../components/LoginForm';
 import { login } from '../services/authService';
+import { getErrorMessage } from '../utils/errorMessages';
 import { useNavigate } from 'react-router-dom';
 import '../styles/LoginPage.css';
 
@@ -16,7 +17,7 @@ function LoginPage() {
       localStorage.setItem('userName', response.usuario.nombre);
       navigate('/dashboard');
     } catch (error) {
-      setError('Error al iniciar sesión: ' + error.message);
+      setError(getErrorMessage(error));
     }
   };
 

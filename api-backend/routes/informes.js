@@ -9,6 +9,7 @@ const Informe = require('../models/Informe');
 
 const NON_EDITABLE = new Set(['_id', 'createdAt', 'updatedAt', '__v']);
 const ALLOWED_ROOT_KEYS = new Set([
+  'cliente', 
   'jefeFaena',
   'encargado',
   'instalacion',
@@ -21,7 +22,6 @@ const ALLOWED_ROOT_KEYS = new Set([
   'personal',
   'totales',
   'equiposLavados',
-  'imagenes',
   'observacionGeneral',
   'firma',
 ]);
@@ -123,6 +123,7 @@ function normalizeEquipoLavado(item = {}) {
     metodo: asString(item.metodo),
     lavada: Boolean(item.lavada),
     observaciones: asString(item.observaciones),
+    imagenes: normalizeImagenes(item.imagenes), // ¡Agregar las imágenes!
   };
 }
 
@@ -156,6 +157,7 @@ function buildUpdate(body) {
     if (!ALLOWED_ROOT_KEYS.has(k) || NON_EDITABLE.has(k)) continue;
 
     switch (k) {
+      case 'cliente': 
       case 'jefeFaena':
       case 'encargado':
       case 'instalacion':
@@ -199,10 +201,6 @@ function buildUpdate(body) {
         out.equiposLavados = normalizeEquiposLavados(v);
         break;
 
-      case 'imagenes':
-        out.imagenes = normalizeImagenes(v);
-        break;
-
       case 'firma':
         if (v && typeof v === 'object') out.firma = normalizeFirma(v);
         break;
@@ -222,12 +220,11 @@ router.post('/', verificarToken, async (req, res) => {
   try {
     const payload = buildUpdate(req.body);
 
-    // Reglas mínimas de negocio
+    // ahora solo validamos instalacion, cliente puede ser vacío
     if (!payload.instalacion || !payload.instalacion.length) {
-      return res.status(400).json({ mensaje: 'Instalacion es obligatoria' });
+      return res.status(400).json({ mensaje: 'Instalación es obligatoria' });
     }
 
-    // fechaInicio por defecto lo pone el esquema; si vino bien formateada, se respeta.
     const docNuevo = await Informe.create(payload);
     const doc = await Informe.findById(docNuevo._id).lean();
 
@@ -241,7 +238,7 @@ router.post('/', verificarToken, async (req, res) => {
 // Listar (admin)
 router.get('/', verificarToken, esAdmin, async (_req, res) => {
   try {
-    const informes = await Informe.find().sort({ createdAt: -1 }).lean();
+    const informes = await Informe.find().sort({ fechaInicio: -1 }).lean(); 
     res.json({ informes });
   } catch (error) {
     res.status(500).json({ mensaje: 'Error al obtener los informes', error: error.message });

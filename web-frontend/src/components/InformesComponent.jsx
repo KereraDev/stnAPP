@@ -1,9 +1,24 @@
 import { useEffect, useState } from 'react';
-import '../styles/InformesComponent.css';
+import { getErrorMessage, ERROR_MESSAGES } from '../utils/errorMessages';
+import '../styles/InformesAdmin.css';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { BookText } from 'lucide-react';
+import { 
+  Document, 
+  Packer, 
+  Paragraph, 
+  TextRun, 
+  Table, 
+  TableRow, 
+  TableCell, 
+  WidthType, 
+  BorderStyle, 
+  HeadingLevel,
+  AlignmentType,
+  ImageRun
+} from 'docx';
 
 const BASE = (import.meta.env.VITE_API_BASE?.replace(/\/$/, '') || 'http://localhost:3000');
 
@@ -21,8 +36,27 @@ function fmtMonth(dt) {
   const d = new Date(dt);
   return isNaN(d) ? '-' : d.toLocaleDateString('es-CL', { year: 'numeric', month: 'short' });
 }
+
+/** util: fecha DD-MM-YYYY */
+function fmtFechaCorta(dt) {
+  if (!dt) return '-';
+  const d = new Date(dt);
+  if (isNaN(d)) return '-';
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()}`;
+}
+
+/** util: mes "junio 2025" en es-CL */
+function fmtMesLargo(dt) {
+  if (!dt) return '-';
+  const d = new Date(dt);
+  if (isNaN(d)) return '-';
+  return d.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' });
+}
+
 const asString = (v) => (v == null ? '' : String(v));
 
+/** IMÁGENES */
 async function getImageBase64(url) {
   const res = await fetch(url);
   const blob = await res.blob();
@@ -32,6 +66,108 @@ async function getImageBase64(url) {
     reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
+}
+async function getImageArrayBuffer(url) {
+  const res = await fetch(url);
+  return await res.arrayBuffer();
+}
+
+/** Construye filas para secciones "resumen" (2 columnas: etiqueta / valor) */
+function buildResumenSections(inf) {
+  const cabecera = [
+    ['Cliente', inf?.cliente || '-'],
+    ['Instalación', inf?.instalacion || '-'],
+    ['Jefe de faena', inf?.jefeFaena || '-'],
+    ['Encargado', inf?.encargado || '-'],
+    ['Tipo de intervención', inf?.tipoIntervencion || '-'],
+    ['Fecha de inicio', fmtFechaCorta(inf?.fechaInicio)],
+    ['Fecha de término', fmtFechaCorta(inf?.fechaTermino)],
+  ];
+
+  const controles = [
+    ['N° Serie Termo-Anem-Higrómetro', inf?.controles?.numeroSerieTermoAnemHigrometro || '-'],
+    ['Humedad Ambiente (H)', inf?.controles?.humedadAmbiente || '-'],
+    ['Velocidad Viento (V-V)', inf?.controles?.velocidadViento || '-'],
+    ['N° Serie Conductivímetro', inf?.controles?.numeroSerieConductivimetro || '-'],
+    ['Conductividad (C)', inf?.controles?.conductividad || '-'],
+    ['Presión de lavado (P)', inf?.controles?.presionLavado || '-'],
+  ];
+
+  const programa = [
+    ['Mes', inf?.programa?.mes ? fmtMesLargo(inf?.programa?.mes) : '-'],
+    ['Estructuras lavadas', inf?.programa?.estructurasLavadas ?? 0],
+    ['Estructuras pendientes', inf?.programa?.estructurasPendientes ?? 0],
+    ['% de avance', `${inf?.programa?.porcentajeAvance ?? 0}%`],
+    ['Cantidad Est.', inf?.programa?.cantidadEst ?? 0],
+    ['Tramo', inf?.programa?.tramo || '-'],
+    ['N° de cadenas lavadas', inf?.programa?.numeroCadenasLavadas ?? 0],
+  ];
+
+  const controlAgua = [
+    ['Fecha', fmtFechaCorta(inf?.controlAgua?.fecha)],
+    ['Responsable', inf?.controlAgua?.responsable || '-'],
+    ['Proveedor de agua', inf?.controlAgua?.proveedorAgua || '-'],
+    ['Consumo diario', inf?.controlAgua?.consumoDiario || '-'],
+  ];
+
+  const personal = [
+    ['Supervisor', inf?.personal?.supervisor ?? 0],
+    ['Jefe de brigada', inf?.personal?.jefeBrigada ?? 0],
+    ['Prevencionista', inf?.personal?.prevencionista ?? 0],
+    ['Operador', inf?.personal?.operador ?? 0],
+    ['Técnico', inf?.personal?.tecnico ?? 0],
+    ['Ayudante', inf?.personal?.ayudante ?? 0],
+  ];
+
+  const totales = [
+    ['HH', inf?.totales?.hh ?? 0],
+    ['Agua utilizada', inf?.totales?.aguaUtilizada || '-'],
+  ];
+
+  return { cabecera, controles, programa, controlAgua, personal, totales };
+}
+
+/** Filas para la tabla "EQUIPOS LAVADOS" */
+function buildEquiposTable(inf) {
+  const head = [
+    'N°',
+    'Tipo',
+    'Equipos',
+    'Lavados',
+    'Fecha',
+    'N° PT',
+    'Jefe de Faena',
+    'N° Serie',
+    'Equipo',
+    'H',
+    'C',
+    'V-V',
+    'P',
+    'Camión',
+    'Método',
+    'Lavada',
+    'Observaciones',
+  ];
+  const rows = (Array.isArray(inf?.equiposLavados) ? inf.equiposLavados : []).map((e) => [
+    e?.numero ?? '',
+    e?.tipo || '',
+    e?.equipos ?? 0,
+    e?.lavados ?? 0,
+    e?.fecha ? fmtFechaCorta(e.fecha) : '-',
+    e?.numeroPT ?? '',
+    e?.jefeFaena || '',
+    e?.numeroSerie ?? '',
+    e?.equipo || '',
+    e?.H ?? '',
+    e?.C || '',
+    e?.vV || '',
+    e?.P || '',
+    e?.camion || '',
+    e?.metodo || '',
+    e?.lavada ? 'Sí' : 'No',
+    e?.observaciones || '',
+  ]);
+  return { head, rows };
 }
 
 /* Construye las filas para exportación desde el nuevo esquema */
@@ -129,64 +265,387 @@ function InformesComponent() {
     const obtenerInformes = async () => {
       try {
         const token = localStorage.getItem('token');
-        if (!token) { setError('No hay token de autenticación'); return; }
+        if (!token) { setError(ERROR_MESSAGES.SESSION_EXPIRED); return; }
         const payload = JSON.parse(atob(token.split('.')[1]));
         const rol = payload.rol;
         const endpoint = rol === 'admin' ? `${BASE}/api/informes` : `${BASE}/api/informes/mios`;
 
         const res = await fetch(endpoint, { headers: { Authorization: `Bearer ${token}` } });
-        if (!res.ok) throw new Error('No se pudieron obtener los informes');
+        if (!res.ok) throw new Error('load_error');
 
         const data = await res.json();
         const list = data.informes || [];
         setInformes(list);
         localStorage.setItem('informes_list', JSON.stringify(list));
       } catch (err) {
-        setError(err.message || 'Error al cargar informes');
+        setError(getErrorMessage(err));
       }
     };
     obtenerInformes();
   }, []);
 
-  /* ---------- Exportar (nuevo esquema) ---------- */
-  const exportarPDF = async () => {
-    if (!selected) return;
-    const doc = new jsPDF();
-    doc.text('Detalle del Informe', 14, 16);
+  /* ---------- Exportar (nuevo esquema mejorado) ---------- */
+  /** PDF con secciones + tabla de equipos + observaciones + firma + imágenes */
+  async function exportarPDF(inf) {
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const marginX = 40;
+    let y = 54;
 
-    const rows = buildExportRows(selected);
-    autoTable(doc, { body: rows, startY: 22, styles: { cellWidth: 'wrap' } });
+    // Título
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('INFORME DE LAVADO DE AISLACIÓN', marginX, y); y += 18;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    // Cliente e Instalación al principio
+    doc.text(`Cliente: ${inf?.cliente ? String(inf.cliente) : '—'}`, marginX, y); y += 14;
+    doc.text(`Instalación: ${inf?.instalacion ? String(inf.instalacion) : '—'}`, marginX, y); y += 14;
 
-    if (Array.isArray(selected.imagenes) && selected.imagenes.length) {
-      let y = (doc.lastAutoTable?.finalY || 22) + 10;
-      for (let i = 0; i < selected.imagenes.length && i < 3; i++) {
+    const sections = buildResumenSections(inf);
+
+    // Helper para renderizar una sección con autoTable
+    const putSection = (titulo, data) => {
+      if (titulo) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        y += 10;
+        doc.text(titulo, marginX, y);
+        y += 6;
+      }
+      
+      // Usar autoTable para cada sección
+      autoTable(doc, {
+        startY: y,
+        head: [['Campo', 'Valor']],
+        body: data,
+        margin: { left: marginX, right: marginX },
+        styles: { 
+          fontSize: 9, 
+          cellPadding: 3,
+          lineColor: [179, 209, 255],
+          lineWidth: 0.1
+        },
+        headStyles: { 
+          fillColor: [24, 93, 200], 
+          textColor: 255,
+          fontStyle: 'bold'
+        },
+        columnStyles: {
+          0: { cellWidth: 150 },
+          1: { cellWidth: 'auto' }
+        },
+        theme: 'grid',
+        tableLineColor: [179, 209, 255],
+        tableLineWidth: 0.1
+      });
+      
+      y = doc.lastAutoTable?.finalY || y;
+      y += 8;
+    };
+
+    putSection('', sections.cabecera);
+    putSection('CONTROLES', sections.controles);
+    putSection('PROGRAMA', sections.programa);
+    putSection('CONTROL DE AGUA', sections.controlAgua);
+    putSection('PERSONAL INVOLUCRADO', sections.personal);
+    putSection('TOTALES', sections.totales);
+
+    // EQUIPOS LAVADOS
+    const equipos = buildEquiposTable(inf);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+    y += 16; doc.text('EQUIPOS LAVADOS', marginX, y);
+    
+    if (y > 600) {
+      doc.addPage();
+      y = 40;
+    }
+    
+    autoTable(doc, {
+      startY: y + 8,
+      head: [equipos.head],
+      body: equipos.rows,
+      margin: { left: marginX, right: marginX },
+      styles: { 
+        fontSize: 8, 
+        cellPadding: 3, 
+        overflow: 'linebreak',
+        lineColor: [179, 209, 255],
+        lineWidth: 0.1
+      },
+      headStyles: { 
+        fillColor: [24, 93, 200], 
+        textColor: 255,
+        fontStyle: 'bold'
+      },
+      columnStyles: { 
+        0: { halign: 'center', cellWidth: 26 }
+      },
+      theme: 'grid',
+      tableLineColor: [179, 209, 255],
+      tableLineWidth: 0.1
+    });
+    y = doc.lastAutoTable?.finalY || y;
+
+    // Observaciones + Firma
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+    y += 16; doc.text('OBSERVACIONES GENERALES', marginX, y);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    const obs = inf?.observacionGeneral?.trim() || '-';
+    const obsLines = doc.splitTextToSize(obs, doc.internal.pageSize.getWidth() - marginX * 2);
+    y += 10; doc.text(obsLines, marginX, y);
+    y += obsLines.length * 12;
+
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+    y += 16; doc.text('FIRMA (Jefe de brigada)', marginX, y);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    y += 12; doc.text(inf?.firma?.jefeBrigada || '-', marginX, y);
+
+    // IMÁGENES (máx 3)
+    if (Array.isArray(inf?.imagenes) && inf.imagenes.length) {
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+      y += 16; doc.text('IMÁGENES', marginX, y);
+      y += 10;
+
+      for (let i = 0; i < Math.min(inf.imagenes.length, 3); i++) {
         try {
-          const imgData = await getImageBase64(selected.imagenes[i]);
+          if (y > 650) {
+            doc.addPage();
+            y = 40;
+          }
+          const imgData = await getImageBase64(inf.imagenes[i]);
           const fmt = String(imgData).startsWith('data:image/png') ? 'PNG' : 'JPEG';
-          doc.text(`Imagen ${i + 1}:`, 14, y);
-          doc.addImage(imgData, fmt, 14, y + 2, 50, 38);
-          y += 45;
-        } catch {
-          doc.text(`No se pudo cargar la imagen ${i + 1}`, 14, y);
-          y += 10;
+          doc.text(`Imagen ${i + 1}:`, marginX, y);
+          doc.addImage(imgData, fmt, marginX, y + 5, 120, 90);
+          y += 100;
+        } catch (e) {
+          doc.text(`Imagen ${i + 1}: No se pudo cargar`, marginX, y);
+          y += 15;
         }
       }
     }
 
-    doc.save(`informe-${selected._id || 'sin-id'}.pdf`);
-  };
+    doc.save(`informe-${inf._id || 'sin-id'}.pdf`);
+  }
 
-  const exportarExcel = () => {
-    if (!selected) return;
-    const rows = buildExportRows(selected);
-    if (Array.isArray(selected.imagenes) && selected.imagenes.length) {
-      selected.imagenes.forEach((url, idx) => rows.push([`Imagen ${idx + 1}`, url]));
+  /* ======== WORD (.docx) con el mismo layout que PDF ======== */
+  function tableHeaderCell(text) {
+    return new TableCell({
+      children: [new Paragraph({ children: [new TextRun({ text, bold: true, color: 'FFFFFF' })] })],
+      shading: { type: 'clear', color: 'auto', fill: '185DC8' },
+      margins: { top: 80, bottom: 80, left: 80, right: 80 },
+      width: { size: 50, type: WidthType.PERCENTAGE },
+    });
+  }
+  function tableCell(text, pct = 50) {
+    return new TableCell({
+      children: [new Paragraph({ text: String(text ?? ''), spacing: { after: 80 } })],
+      width: { size: pct, type: WidthType.PERCENTAGE },
+      margins: { top: 80, bottom: 80, left: 80, right: 80 },
+    });
+  }
+  function simpleHeading(text) {
+    return new Paragraph({
+      text,
+      heading: HeadingLevel.HEADING_2,
+      spacing: { before: 200, after: 120 },
+    });
+  }
+
+  async function exportarWord(inf) {
+    const { cabecera, controles, programa, controlAgua, personal, totales } = buildResumenSections(inf);
+    const equipos = buildEquiposTable(inf);
+
+    const children = [];
+
+    // Título
+    children.push(
+      new Paragraph({
+        text: 'INFORME DE LAVADO DE AISLACIÓN',
+        heading: HeadingLevel.TITLE,
+        spacing: { after: 200 },
+      })
+    );
+
+    // Cliente + Instalación al principio
+    children.push(
+      new Paragraph({
+        children: [new TextRun({ text: 'Cliente: ', bold: true }), new TextRun({ text: inf?.cliente || '—' })],
+        spacing: { after: 80 },
+      })
+    );
+    children.push(
+      new Paragraph({
+        children: [new TextRun({ text: 'Instalación: ', bold: true }), new TextRun({ text: inf?.instalacion || '—' })],
+        spacing: { after: 120 },
+      })
+    );
+
+    // Tabla cabecera (Campo / Valor)
+    const mkTwoCol = (title, pairs) => {
+      const result = [];
+      if (title) {
+        result.push(simpleHeading(title));
+      }
+      
+      result.push(
+        new Table({
+          width: { size: 100, type: WidthType.PERCENTAGE },
+          rows: [
+            // Cabecera de la tabla
+            new TableRow({
+              tableHeader: true,
+              children: [
+                new TableCell({
+                  children: [new Paragraph({ children: [new TextRun({ text: 'Campo', bold: true, color: 'FFFFFF' })] })],
+                  shading: { type: 'clear', color: 'auto', fill: '185DC8' },
+                  margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                  width: { size: 50, type: WidthType.PERCENTAGE },
+                }),
+                new TableCell({
+                  children: [new Paragraph({ children: [new TextRun({ text: 'Valor', bold: true, color: 'FFFFFF' })] })],
+                  shading: { type: 'clear', color: 'auto', fill: '185DC8' },
+                  margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                  width: { size: 50, type: WidthType.PERCENTAGE },
+                }),
+              ],
+            }),
+            // Datos de la tabla
+            ...pairs.map(([key, val]) =>
+              new TableRow({
+                children: [
+                  new TableCell({
+                    children: [new Paragraph({ text: String(key), spacing: { after: 80 } })],
+                    width: { size: 50, type: WidthType.PERCENTAGE },
+                    margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ text: String(val ?? ''), spacing: { after: 80 } })],
+                    width: { size: 50, type: WidthType.PERCENTAGE },
+                    margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                  }),
+                ],
+              })
+            )
+          ],
+          borders: {
+            top: { color: 'B3D1FF', size: 2, style: BorderStyle.SINGLE },
+            bottom: { color: 'B3D1FF', size: 2, style: BorderStyle.SINGLE },
+            left: { color: 'B3D1FF', size: 2, style: BorderStyle.SINGLE },
+            right: { color: 'B3D1FF', size: 2, style: BorderStyle.SINGLE },
+            insideH: { color: 'B3D1FF', size: 2, style: BorderStyle.SINGLE },
+            insideV: { color: 'B3D1FF', size: 2, style: BorderStyle.SINGLE },
+          },
+        })
+      );
+      
+      return result;
+    };
+
+    children.push(...mkTwoCol('', cabecera));
+    children.push(...mkTwoCol('CONTROLES', controles));
+    children.push(...mkTwoCol('PROGRAMA', programa));
+    children.push(...mkTwoCol('CONTROL DE AGUA', controlAgua));
+    children.push(...mkTwoCol('PERSONAL INVOLUCRADO', personal));
+    children.push(...mkTwoCol('TOTALES', totales));
+
+    // EQUIPOS LAVADOS
+    children.push(simpleHeading('EQUIPOS LAVADOS'));
+    children.push(
+      new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+          new TableRow({
+            tableHeader: true,
+            children: equipos.head.map((h) =>
+              new TableCell({
+                children: [
+                  new Paragraph({
+                    children: [new TextRun({ text: h, bold: true, color: 'FFFFFF' })],
+                  }),
+                ],
+                shading: { type: 'clear', color: 'auto', fill: '185DC8' },
+                margins: { top: 60, bottom: 60, left: 60, right: 60 },
+              })
+            ),
+          }),
+          ...equipos.rows.map(
+            (r) =>
+              new TableRow({
+                children: r.map((cell) =>
+                  new TableCell({
+                    children: [new Paragraph({ text: String(cell ?? ''), spacing: { after: 60 } })],
+                    margins: { top: 60, bottom: 60, left: 60, right: 60 },
+                  })
+                ),
+              })
+          ),
+        ],
+        borders: {
+          top: { color: 'B3D1FF', size: 2, style: BorderStyle.SINGLE },
+          bottom: { color: 'B3D1FF', size: 2, style: BorderStyle.SINGLE },
+          left: { color: 'B3D1FF', size: 2, style: BorderStyle.SINGLE },
+          right: { color: 'B3D1FF', size: 2, style: BorderStyle.SINGLE },
+          insideH: { color: 'B3D1FF', size: 2, style: BorderStyle.SINGLE },
+          insideV: { color: 'B3D1FF', size: 2, style: BorderStyle.SINGLE },
+        },
+      })
+    );
+
+    // Observaciones
+    children.push(simpleHeading('OBSERVACIONES GENERALES'));
+    const obs = (inf?.observacionGeneral || '-').split(/\n/);
+    obs.forEach((line) => children.push(new Paragraph({ text: line })));
+
+    // Firma
+    children.push(simpleHeading('FIRMA (Jefe de brigada)'));
+    children.push(new Paragraph({ text: inf?.firma?.jefeBrigada || '-' }));
+
+    // Imágenes (máx 3)
+    if (Array.isArray(inf?.imagenes) && inf.imagenes.length) {
+      children.push(simpleHeading('IMÁGENES'));
+      for (let i = 0; i < inf.imagenes.length && i < 3; i++) {
+        try {
+          const data = await getImageArrayBuffer(inf.imagenes[i]);
+          children.push(
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Imagen ${i + 1}`, italics: true }),
+              ],
+              spacing: { after: 80 },
+            })
+          );
+          children.push(
+            new Paragraph({
+              children: [
+                new ImageRun({
+                  data,
+                  transformation: { width: 260, height: 175 },
+                }),
+              ],
+              alignment: AlignmentType.LEFT,
+              spacing: { after: 120 },
+            })
+          );
+        } catch {
+          children.push(new Paragraph({ text: `No se pudo cargar la imagen ${i + 1}` }));
+        }
+      }
     }
-    const ws = XLSX.utils.aoa_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Informe');
-    XLSX.writeFile(wb, `informe-${selected._id || 'sin-id'}.xlsx`);
-  };
+
+    const doc = new Document({
+      sections: [{ properties: {}, children }],
+    });
+
+    const blob = await Packer.toBlob(doc);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `informe-${inf._id || 'sin-id'}.docx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
 
   /* ---------- Modal ---------- */
   const renderModal = () => {
@@ -194,138 +653,239 @@ function InformesComponent() {
     const inf = selected;
 
     return (
-      <div className="ic-modal-bg" onClick={() => setModalOpen(false)}>
-        <div className="ic-modal" onClick={(e) => e.stopPropagation()}>
-          <button className="ic-modal-close" onClick={() => setModalOpen(false)}>&times;</button>
+      <div className="modal-informe-bg" onClick={() => setModalOpen(false)}>
+        <div className="modal-informe" onClick={(e) => e.stopPropagation()}>
+          <button className="modal-close" onClick={() => setModalOpen(false)}>
+            &times;
+          </button>
           <h3>Detalle del Informe</h3>
 
-          <div className="ic-section">
-            <h4>Cabecera</h4>
-            <div className="ic-grid2">
-              <div><b>Instalación:</b> {inf.instalacion || '-'}</div>
-              <div><b>Jefe de faena:</b> {inf.jefeFaena || '-'}</div>
-              <div><b>Encargado:</b> {inf.encargado || '-'}</div>
-              <div><b>Tipo intervención:</b> {inf.tipoIntervencion || '-'}</div>
-              <div><b>Fecha inicio:</b> {fmtCL(inf.fechaInicio)}</div>
-              <div><b>Fecha término:</b> {fmtCL(inf.fechaTermino)}</div>
+          <div className="modal-informe-content">
+            <div className="form-grid">
+              <label>
+                Cliente
+                <input value={inf?.cliente || '-'} readOnly />
+              </label>
+              <label>
+                Instalación
+                <input value={inf?.instalacion || '-'} readOnly />
+              </label>
+              <label>
+                Jefe de faena
+                <input value={inf?.jefeFaena || '-'} readOnly />
+              </label>
+              <label>
+                Encargado
+                <input value={inf?.encargado || '-'} readOnly />
+              </label>
+              <label>
+                Tipo de intervención
+                <input value={inf?.tipoIntervencion || '-'} readOnly />
+              </label>
+              <label>
+                Fecha inicio
+                <input value={fmtCL(inf?.fechaInicio)} readOnly />
+              </label>
+              <label>
+                Fecha término
+                <input value={fmtCL(inf?.fechaTermino)} readOnly />
+              </label>
             </div>
-          </div>
 
-          <div className="ic-section">
-            <h4>Controles</h4>
-            <div className="ic-grid2">
-              <div><b>N° serie T-A-H:</b> {inf?.controles?.numeroSerieTermoAnemHigrometro || '-'}</div>
-              <div><b>Humedad ambiente:</b> {inf?.controles?.humedadAmbiente || '-'}</div>
-              <div><b>Velocidad viento:</b> {inf?.controles?.velocidadViento || '-'}</div>
-              <div><b>N° serie Conductivímetro:</b> {inf?.controles?.numeroSerieConductivimetro || '-'}</div>
-              <div><b>Conductividad:</b> {inf?.controles?.conductividad || '-'}</div>
-              <div><b>Presión lavado:</b> {inf?.controles?.presionLavado || '-'}</div>
-            </div>
-          </div>
+            <fieldset className="fieldset">
+              <legend>Controles</legend>
+              <div className="form-grid">
+                <label>
+                  N° serie T-A-H
+                  <input value={inf?.controles?.numeroSerieTermoAnemHigrometro || '-'} readOnly />
+                </label>
+                <label>
+                  Humedad ambiente
+                  <input value={inf?.controles?.humedadAmbiente || '-'} readOnly />
+                </label>
+                <label>
+                  Velocidad viento
+                  <input value={inf?.controles?.velocidadViento || '-'} readOnly />
+                </label>
+                <label>
+                  N° serie Conductivímetro
+                  <input value={inf?.controles?.numeroSerieConductivimetro || '-'} readOnly />
+                </label>
+                <label>
+                  Conductividad
+                  <input value={inf?.controles?.conductividad || '-'} readOnly />
+                </label>
+                <label>
+                  Presión lavado
+                  <input value={inf?.controles?.presionLavado || '-'} readOnly />
+                </label>
+              </div>
+            </fieldset>
 
-          <div className="ic-section">
-            <h4>Programa</h4>
-            <div className="ic-grid2">
-              <div><b>Mes:</b> {fmtMonth(inf?.programa?.mes)}</div>
-              <div><b>Estructuras Lavadas:</b> {inf?.programa?.estructurasLavadas ?? 0}</div>
-              <div><b>Estructuras Pendientes:</b> {inf?.programa?.estructurasPendientes ?? 0}</div>
-              <div><b>% Avance:</b> {(inf?.programa?.porcentajeAvance ?? 0) + '%'}</div>
-              <div><b>Cantidad Est.:</b> {inf?.programa?.cantidadEst ?? 0}</div>
-              <div><b>Tramo:</b> {inf?.programa?.tramo || '-'}</div>
-              <div><b>N° Cadenas Lavadas:</b> {inf?.programa?.numeroCadenasLavadas ?? 0}</div>
-            </div>
-          </div>
+            <fieldset className="fieldset">
+              <legend>Programa</legend>
+              <div className="form-grid">
+                <label>
+                  Mes
+                  <input value={fmtMonth(inf?.programa?.mes)} readOnly />
+                </label>
+                <label>
+                  Estructuras Lavadas
+                  <input value={inf?.programa?.estructurasLavadas ?? 0} readOnly />
+                </label>
+                <label>
+                  Estructuras Pendientes
+                  <input value={inf?.programa?.estructurasPendientes ?? 0} readOnly />
+                </label>
+                <label>
+                  % Avance
+                  <input value={`${inf?.programa?.porcentajeAvance ?? 0}%`} readOnly />
+                </label>
+                <label>
+                  Cantidad Est.
+                  <input value={inf?.programa?.cantidadEst ?? 0} readOnly />
+                </label>
+                <label>
+                  Tramo
+                  <input value={inf?.programa?.tramo || '-'} readOnly />
+                </label>
+                <label>
+                  N° Cadenas Lavadas
+                  <input value={inf?.programa?.numeroCadenasLavadas ?? 0} readOnly />
+                </label>
+              </div>
+            </fieldset>
 
-          <div className="ic-section">
-            <h4>Control de Agua</h4>
-            <div className="ic-grid2">
-              <div><b>Fecha:</b> {fmtCL(inf?.controlAgua?.fecha)}</div>
-              <div><b>Responsable:</b> {inf?.controlAgua?.responsable || '-'}</div>
-              <div><b>Proveedor:</b> {inf?.controlAgua?.proveedorAgua || '-'}</div>
-              <div><b>Consumo diario:</b> {inf?.controlAgua?.consumoDiario || '-'}</div>
-            </div>
-          </div>
+            <fieldset className="fieldset">
+              <legend>Control de Agua</legend>
+              <div className="form-grid">
+                <label>
+                  Fecha
+                  <input value={fmtCL(inf?.controlAgua?.fecha)} readOnly />
+                </label>
+                <label>
+                  Responsable
+                  <input value={inf?.controlAgua?.responsable || '-'} readOnly />
+                </label>
+                <label>
+                  Proveedor
+                  <input value={inf?.controlAgua?.proveedorAgua || '-'} readOnly />
+                </label>
+                <label>
+                  Consumo diario
+                  <input value={inf?.controlAgua?.consumoDiario || '-'} readOnly />
+                </label>
+              </div>
+            </fieldset>
 
-          <div className="ic-section">
-            <h4>Personal</h4>
-            <div className="ic-grid2">
-              <div><b>Supervisor:</b> {inf?.personal?.supervisor ?? 0}</div>
-              <div><b>Jefe de brigada:</b> {inf?.personal?.jefeBrigada ?? 0}</div>
-              <div><b>Prevencionista:</b> {inf?.personal?.prevencionista ?? 0}</div>
-              <div><b>Operador:</b> {inf?.personal?.operador ?? 0}</div>
-              <div><b>Técnico:</b> {inf?.personal?.tecnico ?? 0}</div>
-              <div><b>Ayudante:</b> {inf?.personal?.ayudante ?? 0}</div>
-            </div>
-          </div>
+            <fieldset className="fieldset">
+              <legend>Personal</legend>
+              <div className="form-grid">
+                <label>
+                  Supervisor
+                  <input value={inf?.personal?.supervisor ?? 0} readOnly />
+                </label>
+                <label>
+                  Jefe de brigada
+                  <input value={inf?.personal?.jefeBrigada ?? 0} readOnly />
+                </label>
+                <label>
+                  Prevencionista
+                  <input value={inf?.personal?.prevencionista ?? 0} readOnly />
+                </label>
+                <label>
+                  Operador
+                  <input value={inf?.personal?.operador ?? 0} readOnly />
+                </label>
+                <label>
+                  Técnico
+                  <input value={inf?.personal?.tecnico ?? 0} readOnly />
+                </label>
+                <label>
+                  Ayudante
+                  <input value={inf?.personal?.ayudante ?? 0} readOnly />
+                </label>
+              </div>
+            </fieldset>
 
-          <div className="ic-section">
-            <h4>Totales</h4>
-            <div className="ic-grid2">
-              <div><b>HH:</b> {inf?.totales?.hh ?? 0}</div>
-              <div><b>Agua utilizada:</b> {inf?.totales?.aguaUtilizada || '-'}</div>
-            </div>
-          </div>
+            <fieldset className="fieldset">
+              <legend>Totales</legend>
+              <div className="form-grid">
+                <label>
+                  HH
+                  <input value={inf?.totales?.hh ?? 0} readOnly />
+                </label>
+                <label>
+                  Agua utilizada
+                  <input value={inf?.totales?.aguaUtilizada || '-'} readOnly />
+                </label>
+              </div>
+            </fieldset>
 
-          <div className="ic-section">
-            <h4>Equipos Lavados</h4>
-            {Array.isArray(inf?.equiposLavados) && inf.equiposLavados.length ? (
-              <div className="ic-equipos">
-                {inf.equiposLavados.map((e, i) => (
-                  <div className="ic-equipo" key={i}>
-                    <div className="ic-equipo-head">Equipo #{i + 1}</div>
-                    <div className="ic-grid2">
-                      <div><b>N°:</b> {e?.numero ?? '-'}</div>
-                      <div><b>Tipo:</b> {e?.tipo || '-'}</div>
-                      <div><b>Equipos:</b> {e?.equipos ?? 0}</div>
-                      <div><b>Lavados:</b> {e?.lavados ?? 0}</div>
-                      <div><b>Fecha:</b> {fmtCL(e?.fecha)}</div>
-                      <div><b>N° PT:</b> {e?.numeroPT ?? '-'}</div>
-                      <div><b>Jefe de faena:</b> {e?.jefeFaena || '-'}</div>
-                      <div><b>N° Serie:</b> {e?.numeroSerie ?? '-'}</div>
-                      <div><b>Equipo:</b> {e?.equipo || '-'}</div>
-                      <div><b>H:</b> {e?.H ?? '-'}</div>
-                      <div><b>C:</b> {e?.C || '-'}</div>
-                      <div><b>V-V:</b> {e?.vV || '-'}</div>
-                      <div><b>P:</b> {e?.P || '-'}</div>
-                      <div><b>Camión:</b> {e?.camion || '-'}</div>
-                      <div><b>Método:</b> {e?.metodo || '-'}</div>
-                      <div><b>Lavada:</b> {e?.lavada ? 'Sí' : 'No'}</div>
+            <fieldset className="fieldset">
+              <legend>Equipos Lavados</legend>
+              {Array.isArray(inf?.equiposLavados) && inf.equiposLavados.length ? (
+                inf.equiposLavados.map((e, i) => (
+                  <div key={i} className="material-item">
+                    <div className="material-header">Equipo #{i + 1}</div>
+                    <div className="form-grid">
+                      <label>N°<input value={e?.numero ?? '-'} readOnly /></label>
+                      <label>Tipo<input value={e?.tipo || '-'} readOnly /></label>
+                      <label>Equipos<input value={e?.equipos ?? 0} readOnly /></label>
+                      <label>Lavados<input value={e?.lavados ?? 0} readOnly /></label>
+                      <label>Fecha<input value={fmtCL(e?.fecha)} readOnly /></label>
+                      <label>N° PT<input value={e?.numeroPT ?? '-'} readOnly /></label>
+                      <label>Jefe de faena<input value={e?.jefeFaena || '-'} readOnly /></label>
+                      <label>N° Serie<input value={e?.numeroSerie ?? '-'} readOnly /></label>
+                      <label>Equipo<input value={e?.equipo || '-'} readOnly /></label>
+                      <label>H<input value={e?.H ?? '-'} readOnly /></label>
+                      <label>C<input value={e?.C || '-'} readOnly /></label>
+                      <label>V-V<input value={e?.vV || '-'} readOnly /></label>
+                      <label>P<input value={e?.P || '-'} readOnly /></label>
+                      <label>Camión<input value={e?.camion || '-'} readOnly /></label>
+                      <label>Método<input value={e?.metodo || '-'} readOnly /></label>
+                      <label>Lavada<input value={e?.lavada ? 'Sí' : 'No'} readOnly /></label>
                     </div>
-                    <div className="ic-observ"><b>Observaciones:</b> {e?.observaciones || '-'}</div>
+                    <label>
+                      Observaciones
+                      <textarea value={e?.observaciones || '-'} readOnly rows={2} />
+                    </label>
                   </div>
-                ))}
+                ))
+              ) : (
+                <div className="muted">Sin registros.</div>
+              )}
+            </fieldset>
+
+            <fieldset className="fieldset">
+              <legend>Imágenes</legend>
+              {Array.isArray(inf?.imagenes) && inf.imagenes.length ? (
+                inf.imagenes.map((u, i) => (
+                  <div key={i} className="material-row">
+                    <input value={u} readOnly />
+                    <a href={u} target="_blank" rel="noreferrer" className="btn btn-small">
+                      Ver
+                    </a>
+                  </div>
+                ))
+              ) : (
+                <div className="muted">Sin imágenes.</div>
+              )}
+            </fieldset>
+
+            <fieldset className="fieldset">
+              <legend>Observaciones / Firma</legend>
+              <div className="form-grid">
+                <label>
+                  Observación General
+                  <textarea value={inf?.observacionGeneral || '-'} readOnly rows={3} />
+                </label>
+                <label>
+                  Firma - Jefe de brigada
+                  <input value={inf?.firma?.jefeBrigada || '-'} readOnly />
+                </label>
               </div>
-            ) : (
-              <div className="ic-muted">Sin registros.</div>
-            )}
-          </div>
-
-          <div className="ic-section">
-            <h4>Observaciones / Firma</h4>
-            <div className="ic-grid2">
-              <div className="ic-full"><b>Observación general:</b> {inf?.observacionGeneral || '-'}</div>
-              <div><b>Firma — Jefe de brigada:</b> {inf?.firma?.jefeBrigada || '-'}</div>
-            </div>
-          </div>
-
-          <div className="ic-section">
-            <h4>Imágenes</h4>
-            {Array.isArray(inf?.imagenes) && inf.imagenes.length ? (
-              <div className="ic-images">
-                {inf.imagenes.map((u, i) => (
-                  <a className="ic-img-link" href={u} key={i} target="_blank" rel="noreferrer">
-                    Imagen {i + 1}
-                  </a>
-                ))}
-              </div>
-            ) : (
-              <div className="ic-muted">Sin imágenes.</div>
-            )}
-          </div>
-
-          <div className="ic-modal-actions">
-            <button className="ic-btn ic-btn-danger" onClick={exportarPDF}>PDF</button>
-            <button className="ic-btn ic-btn-success" onClick={exportarExcel}>Excel</button>
+            </fieldset>
           </div>
         </div>
       </div>
@@ -334,43 +894,70 @@ function InformesComponent() {
 
   /* ---------- render listado ---------- */
   return (
-    <div className="ic-wrap">
-      <div className="ic-header">
-        <div className="ic-header-icon"><BookText size={36} color="#185dc8" /></div>
+    <div className="informes-containerComponent informes-full-height">
+      <div className="informes-container">
+        <div className="informes-header-icon">
+          <BookText size={36} color="#185dc8" />
+        </div>
         <div>
-          <h1 className="ic-title">Informes</h1>
-          <p className="ic-subtitle">Listado de informes con el nuevo esquema.</p>
+          <h1 className="informes-title">Informes</h1>
+          <p className="informes-subtitle">Listado de informes con el nuevo esquema.</p>
         </div>
       </div>
 
-      {error && <p className="ic-error">{error}</p>}
+      {error && <p className="informes-error">{error}</p>}
 
       {informes.length === 0 ? (
-        <div className="ic-empty">No hay informes disponibles.</div>
+        <div className="no-informes">No hay informes disponibles.</div>
       ) : (
-        <table className="ic-table ic-table-fixed">
+        <table className="informes-table informes-table--compact">
           <thead>
             <tr>
-              <th className="ic-col-inst">Instalación</th>
-              <th className="ic-col-person">Jefe de faena</th>
-              <th className="ic-col-person">Encargado</th>
-              <th className="ic-col-tipo">Tipo intervención</th>
-              <th className="ic-col-mes">Mes prog.</th>
+              <th className="col-cliente">Cliente</th>
+              <th className="col-ubicacion">Instalación</th>
+              <th className="col-tecnico">Jefe de faena</th>
+              <th className="col-tecnico">Encargado</th>
+              <th className="col-aislador">Tipo intervención</th>
+              <th className="col-mes hide-md">Mes prog.</th>
+              <th className="col-exportar">Exportar</th>
             </tr>
           </thead>
           <tbody>
             {informes.map((inf) => (
-              <tr
-                key={inf._id}
-                className="ic-row"
-                onClick={() => { setSelected(inf); setModalOpen(true); }}
-                title="Ver detalle"
-              >
-                <td className="ic-cell-ellipsis">{inf?.instalacion || '-'}</td>
-                <td className="ic-cell-ellipsis">{inf?.jefeFaena || '-'}</td>
-                <td className="ic-cell-ellipsis">{inf?.encargado || '-'}</td>
-                <td className="ic-cell-ellipsis">{inf?.tipoIntervencion || '-'}</td>
-                <td>{fmtMonth(inf?.programa?.mes)}</td>
+              <tr key={inf._id} title="Ver detalle">
+                <td onClick={() => { setSelected(inf); setModalOpen(true); }}>
+                  {inf?.cliente || '-'}
+                </td>
+                <td onClick={() => { setSelected(inf); setModalOpen(true); }}>
+                  {inf?.instalacion || '-'}
+                </td>
+                <td onClick={() => { setSelected(inf); setModalOpen(true); }}>
+                  {inf?.jefeFaena || '-'}
+                </td>
+                <td onClick={() => { setSelected(inf); setModalOpen(true); }}>
+                  {inf?.encargado || '-'}
+                </td>
+                <td onClick={() => { setSelected(inf); setModalOpen(true); }}>
+                  {inf?.tipoIntervencion || '-'}
+                </td>
+                <td className="col-mes hide-md" onClick={() => { setSelected(inf); setModalOpen(true); }}>
+                  {inf?.programa?.mes
+                    ? new Date(inf.programa.mes).toLocaleDateString('es-CL', {
+                        year: 'numeric',
+                        month: 'short',
+                      })
+                    : '-'}
+                </td>
+                <td>
+                  <div className="export-buttons">
+                    <button className="btn btn-small" onClick={() => exportarPDF(inf)}>
+                      PDF
+                    </button>
+                    <button className="btn btn-small" onClick={() => exportarWord(inf)}>
+                      Word
+                    </button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
