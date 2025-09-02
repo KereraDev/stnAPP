@@ -4,6 +4,7 @@ import { BookText } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import ImageUploader from './ImageUploader';
+import logoStnSaesa from '../assets/stn saesaz.jpeg';
 /* Word (.docx) */
 import {
   AlignmentType,
@@ -596,6 +597,40 @@ function InformesAdmin() {
      EXPORTAR (PDF y WORD)
   ============================ */
 
+  // Helper para convertir imagen a base64
+  function getImageAsBase64(imageSrc) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+        const dataURL = canvas.toDataURL('image/jpeg', 0.8);
+        resolve(dataURL);
+      };
+      img.onerror = () => resolve(null);
+      img.crossOrigin = 'anonymous';
+      img.src = imageSrc;
+    });
+  }
+
+  // Helper para convertir imagen a Uint8Array para docx
+  async function getImageAsUint8Array(imageSrc) {
+    try {
+      const dataURL = await getImageAsBase64(imageSrc);
+      if (!dataURL) return null;
+      
+      const response = await fetch(dataURL);
+      const buffer = await response.arrayBuffer();
+      return new Uint8Array(buffer);
+    } catch (error) {
+      console.warn('Error al convertir imagen para Word:', error);
+      return null;
+    }
+  }
+
   /** util: fecha DD-MM-YYYY */
   function fmtFechaCorta(dt) {
     if (!dt) return '-';
@@ -780,6 +815,17 @@ function InformesAdmin() {
     const doc = new jsPDF({ unit: 'pt', format: 'a4' });
     const marginX = 40;
     let y = 54;
+
+    // Agregar logo en la esquina superior derecha
+    try {
+      const logoBase64 = await getImageAsBase64(logoStnSaesa);
+      if (logoBase64) {
+        const pageWidth = doc.internal.pageSize.getWidth();
+        doc.addImage(logoBase64, 'JPEG', pageWidth - 120, 20, 80, 40);
+      }
+    } catch (error) {
+      console.warn('No se pudo cargar el logo:', error);
+    }
 
     // Título
     doc.setFont('helvetica', 'bold');
@@ -1003,6 +1049,30 @@ function InformesAdmin() {
     const equipos = buildEquiposTable(inf);
 
     const children = [];
+
+    // Agregar logo en la cabecera
+    try {
+      const logoBytes = await getImageAsUint8Array(logoStnSaesa);
+      if (logoBytes) {
+        children.push(
+          new Paragraph({
+            children: [
+              new ImageRun({
+                data: logoBytes,
+                transformation: {
+                  width: 120,
+                  height: 60,
+                },
+              }),
+            ],
+            alignment: AlignmentType.RIGHT,
+            spacing: { after: 200 },
+          })
+        );
+      }
+    } catch (error) {
+      console.warn('No se pudo agregar el logo al documento Word:', error);
+    }
 
     // Título
     children.push(

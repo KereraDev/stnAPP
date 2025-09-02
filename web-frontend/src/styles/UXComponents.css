@@ -1,0 +1,226 @@
+/* ========================================
+   UX Components - Estilos mejorados
+   ======================================== */
+
+/* Estilos globales para componentes UX */
+.smart-combo,
+.stepper-combo,
+.modal-combo,
+.combo {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* === SmartComboInput === */
+.smart-combo-input:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+.smart-combo-input.required:invalid {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.smart-combo-list {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.smart-combo-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.smart-combo-list::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.smart-combo-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.smart-combo-list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* === HierarchicalComboInput === */
+.combo-input:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+.combo-input.required:invalid {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.combo-list.hierarchical .combo-option:hover {
+  transform: translateX(2px);
+}
+
+.submenu {
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* === StepperComboInput === */
+.stepper-combo .stepper-input-wrapper:hover {
+  border-color: #9ca3af;
+}
+
+.stepper-combo .stepper-input-wrapper:focus-within {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.stepper-display.required:invalid {
+  border-color: #dc2626;
+}
+
+.stepper-menu {
+  animation: fadeInDown 0.2s ease-out;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* === ModalComboInput === */
+.modal-combo [role="button"]:hover {
+  border-color: #9ca3af;
+}
+
+.modal-combo [role="button"]:focus-within {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* === Responsive Design === */
+@media (max-width: 768px) {
+  /* Mejorar usabilidad en móviles */
+  .submenu {
+    position: fixed !important;
+    left: 20px !important;
+    right: 20px !important;
+    top: auto !important;
+    bottom: 20px !important;
+    min-width: auto !important;
+    max-height: 50vh !important;
+  }
+
+  .smart-combo-list,
+  .stepper-menu {
+    max-height: 40vh !important;
+  }
+
+  /* Modal responsive */
+  .modal-combo .modal {
+    margin: 10px !important;
+    max-width: none !important;
+    max-height: 90vh !important;
+  }
+
+  /* Aumentar tamaño de toque */
+  .combo-option,
+  .smart-combo div[role="option"],
+  .stepper-combo div[role="option"] {
+    min-height: 44px !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+}
+
+/* === Accesibilidad === */
+@media (prefers-reduced-motion: reduce) {
+  .submenu,
+  .stepper-menu,
+  .combo-option {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Modo alto contraste */
+@media (prefers-contrast: high) {
+  .smart-combo-input,
+  .combo-input,
+  .stepper-display {
+    border-width: 2px !important;
+  }
+
+  .combo-option:hover,
+  .smart-combo div[role="option"]:hover,
+  .stepper-combo div:hover {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+  }
+}
+
+/* === Estados de foco mejorados === */
+.smart-combo-input:focus-visible,
+.combo-input:focus-visible,
+.stepper-display:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* === Loading states === */
+.combo-loading {
+  position: relative;
+}
+
+.combo-loading::after {
+  content: '';
+  position: absolute;
+  right: 30px;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #e5e7eb;
+  border-top: 2px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  transform: translateY(-50%);
+}
+
+@keyframes spin {
+  0% { transform: translateY(-50%) rotate(0deg); }
+  100% { transform: translateY(-50%) rotate(360deg); }
+}
+
+/* === Error states === */
+.combo-error {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important;
+}
+
+.combo-error-message {
+  color: #dc2626;
+  font-size: 12px;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.combo-error-message::before {
+  content: '⚠️';
+}

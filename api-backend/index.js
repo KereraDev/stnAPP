@@ -35,7 +35,7 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin(origin, cb) {
-    // permitir requests sin Origin (curl, health checks, etc.)
+    // permitir requests sin Origin (curl, health checks, apps móviles, etc.)
     if (!origin) return cb(null, true);
 
     try {

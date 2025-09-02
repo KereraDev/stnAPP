@@ -245,12 +245,18 @@ router.get('/', verificarToken, esAdmin, async (_req, res) => {
   }
 });
 
-// Mis informes (deshabilitado: el nuevo esquema no guarda autor/tecnico)
-router.get('/mios', verificarToken, async (_req, res) => {
-  return res.status(410).json({
-    mensaje:
-      'Ruta no disponible: el esquema actual no almacena el autor del informe. Agrega `creadoPor` al modelo para reactivarla.',
-  });
+// Mis informes - Endpoint para aplicación móvil
+router.get('/mios', verificarToken, async (req, res) => {
+  try {
+    // Por ahora devolver todos los informes hasta implementar filtrado por usuario
+    const informes = await Informe.find().sort({ fechaInicio: -1 }).lean();
+    res.json({ informes });
+  } catch (error) {
+    res.status(500).json({ 
+      mensaje: 'Error al obtener informes', 
+      error: error.message 
+    });
+  }
 });
 
 // Obtener por ID

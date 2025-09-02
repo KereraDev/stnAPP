@@ -2,9 +2,70 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 import { User, ChevronDown, LogOut, Shield, Sparkles, BookText, LayoutDashboard } from 'lucide-react';
 import '../styles/Header.css';
+import logoStnSaesa from '../assets/stn saesaz.jpeg';
 
 function Header() {
   const navigate = useNavigate();
+  const [optimizedLogo, setOptimizedLogo] = useState(() => {
+    // Intentar cargar la imagen optimizada desde localStorage al inicializar
+    return localStorage.getItem('optimized_logo') || null;
+  });
+
+  // Optimizar imagen para mejor visibilidad sin eliminar completamente el fondo
+  useEffect(() => {
+    const optimizeImage = async () => {
+      // Si ya tenemos la imagen optimizada en caché, no la procesamos de nuevo
+      const cachedLogo = localStorage.getItem('optimized_logo');
+      if (cachedLogo) {
+        setOptimizedLogo(cachedLogo);
+        return;
+      }
+
+      // Solo procesar si no está en caché
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        
+        // Hacer el fondo blanco semi-transparente en lugar de eliminarlo completamente
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          
+          // Si el píxel es muy blanco, hacerlo semi-transparente
+          if (r > 235 && g > 235 && b > 235) {
+            const brightness = (r + g + b) / 3;
+            const transparency = Math.max(0.1, 1 - (brightness - 235) / 20 * 0.7);
+            data[i + 3] = Math.floor(data[i + 3] * transparency);
+          }
+          // Mejorar contraste de colores no blancos
+          else if (r + g + b < 600) {
+            data[i] = Math.min(255, r * 1.1); // R
+            data[i + 1] = Math.min(255, g * 1.1); // G  
+            data[i + 2] = Math.min(255, b * 1.1); // B
+          }
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        const optimizedDataURL = canvas.toDataURL('image/png');
+        
+        // Guardar en localStorage para persistencia
+        localStorage.setItem('optimized_logo', optimizedDataURL);
+        setOptimizedLogo(optimizedDataURL);
+      };
+      img.crossOrigin = 'anonymous';
+      img.src = logoStnSaesa;
+    };
+
+    optimizeImage();
+  }, []);
 
   let rol = '';
   let userName = '';
@@ -52,12 +113,21 @@ function Header() {
     <header className="header">
       <div className="header-container">
         <div className="header-left">
-          <div className="logo-icon">
-            <Sparkles className="logo-icon-svg" />
-          </div>
-          <div>
-            <h1 className="logo-title">STN Saesa</h1>
-            <p className="logo-subtitle">Sistema de Lavados</p>
+          <div className="logo-container">
+            {optimizedLogo ? (
+              <img 
+                src={optimizedLogo} 
+                alt="STN Saesa Logo" 
+                className="logo-image"
+              />
+            ) : (
+              <img 
+                src={logoStnSaesa} 
+                alt="STN Saesa Logo" 
+                className="logo-image"
+                style={{ opacity: 0.9 }}
+              />
+            )}
           </div>
         </div>
 
